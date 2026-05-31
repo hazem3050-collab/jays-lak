@@ -6,7 +6,12 @@ import hashlib
 from datetime import datetime
 
 # ==========================================
-# 🛑 المجلدات المخصصة لحفظ الصور والأصوات فعلياً
+# 🛑 رفع حد رفع الملفات والصوت إلى 200 ميجابايت يدوياً لمنع أي قيود
+# ==========================================
+st.config.set_option("server.maxUploadSize", 200)
+
+# ==========================================
+# 📂 المجلدات المخصصة لحفظ الصور والأصوات فعلياً
 # ==========================================
 VOICE_DIR = "saved_voices"
 IMAGE_DIR = "saved_images"
@@ -99,8 +104,8 @@ def init_db():
     cursor.execute("SELECT COUNT(*) FROM drivers")
     if cursor.fetchone()[0] == 0:
         d_pass = hash_password("1234")
-        cursor.execute("INSERT INTO drivers VALUES ('DRV-101', 'كابتن عبدالقادر نجيب', '771111111', 'قرية المنزل', ?)", (d_pass,))
-        cursor.execute("INSERT INTO drivers VALUES ('DRV-102', 'كابتن جلال حميد', '772222222', 'قرى الصفي', ?)", (d_pass,))
+        cursor.execute("INSERT INTO drivers VALUES ('DRV-101', 'عبدالقادر نجيب', '771111111', 'قرية المنزل', ?)", (d_pass,))
+        cursor.execute("INSERT INTO drivers VALUES ('DRV-102', 'جلال حميد', '772222222', 'قرى الصفي', ?)", (d_pass,))
         
     conn.commit()
     conn.close()
@@ -125,10 +130,10 @@ def update_admin_password(new_pwd):
     conn.close()
 
 # ==========================================
-# 🎨 واجهة وتصميم التطبيق والخلفية الغذائية الجذابة
+# 🎨 واجهة وتصميم التطبيق والخلفية الغذائية الجذابة بألوان سوداء واضحة
 # ==========================================
 st.set_page_config(
-    page_title=" جايا لك للتوصيل الذكي",
+    page_title="مؤسسة جايا لك للتوصيل الذكي",
     page_icon="📦",
     layout="centered",
     initial_sidebar_state="collapsed"
@@ -143,64 +148,73 @@ window.addEventListener('offline', function(e) {
 </script>
 """, height=0)
 
-# إضافة صورة الخلفية للمواد الغذائية مع تضبيب خفيف وخلفية زجاجية شفافة للكروت لجمال القراءة
+# تحويل كافة ألوان النصوص والخطوط إلى اللون الأسود القاتم لسهولة القراءة والوضوح
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
     
     /* خلفية كاملة بصورة مواد غذائية طازجة وجميلة */
     .stApp {
-        background-image: linear-gradient(rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.45)), 
+        background-image: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), 
                           url('https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
     }
     
-    * { font-family: 'Cairo', sans-serif; text-align: right; direction: rtl; }
-    
-    /* تصميم التبويبات المفضل لديك بشكل عصري متناسق مع الخلفية */
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; background-color: rgba(255, 255, 255, 0.8); padding: 8px; border-radius: 12px; }
-    .stTabs [data-baseweb="tab"] { 
-        background-color: rgba(241, 245, 249, 0.9); border-radius: 8px; padding: 10px 20px; font-weight: bold; color: #334155; border: 1px solid #cbd5e1;
+    /* جعل اتجاه الخطوط عربي ولون النص الافتراضي أسود بالكامل */
+    * { 
+        font-family: 'Cairo', sans-serif; 
+        text-align: right; 
+        direction: rtl; 
+        color: #000000 !important; 
     }
-    .stTabs [aria-selected="true"] { background-color: #16a34a !important; color: white !important; border-color: #16a34a !important; }
     
-    /* كروت زجاجية شفافة (Glassmorphism) تضمن وضوح النصوص فوق صورة الخلفية */
+    /* تصميم التبويبات المفضل لديك مع نصوص سوداء واضحة */
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; justify-content: center; background-color: rgba(255, 255, 255, 0.85); padding: 8px; border-radius: 12px; }
+    .stTabs [data-baseweb="tab"] { 
+        background-color: rgba(241, 245, 249, 0.95); border-radius: 8px; padding: 10px 20px; font-weight: bold; border: 1px solid #cbd5e1;
+    }
+    .stTabs [aria-selected="true"] { background-color: #16a34a !important; border-color: #16a34a !important; }
+    .stTabs [aria-selected="true"] span { color: white !important; } /* نص التبويب النشط أبيض ليبرز */
+    
+    /* كروت زجاجية شفافة بنصوص سوداء داكنة جداً */
     .card { 
-        background-color: rgba(255, 255, 255, 0.92); 
+        background-color: rgba(255, 255, 255, 0.95); 
         padding: 22px; 
         border-radius: 16px; 
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05); 
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); 
         margin-bottom: 18px; 
-        border: 1px solid rgba(255, 255, 255, 0.7); 
+        border: 1px solid rgba(255, 255, 255, 0.8); 
         backdrop-filter: blur(4px);
     }
     
     .voice-box { border: 2px dashed #0284c7; padding: 15px; background-color: rgba(240, 249, 255, 0.95); border-radius: 12px; margin-bottom: 10px; backdrop-filter: blur(4px); }
     .jeeb-panel { background-color: rgba(240, 253, 244, 0.95); border-right: 6px solid #0d9488; padding: 15px; border-radius: 8px; font-weight: bold; }
     .success-panel { background-color: rgba(240, 253, 244, 0.95); border-right: 6px solid #16a34a; padding: 15px; border-radius: 8px; }
-    .price-tag { background-color: rgba(239, 246, 255, 0.95); color: #1d4ed8; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; font-size: 19px; border: 1px dashed #3b82f6; }
+    .price-tag { background-color: rgba(239, 246, 255, 0.95); color: #1d4ed8 !important; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; font-size: 19px; border: 1px dashed #3b82f6; }
+    .price-tag * { color: #1d4ed8 !important; }
     
-    /* زر المندوب العملاق لتسهيل الضغط */
+    /* زر المندوب العملاق لتسهيل الضغط ونصه أبيض ليظهر بوضوح */
     .big-driver-btn button {
         width: 100% !important;
         height: 70px !important;
         background-color: #16a34a !important;
-        color: white !important;
         font-size: 20px !important;
         font-weight: bold !important;
         border-radius: 14px !important;
         box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.3) !important;
     }
+    .big-driver-btn button div * { color: white !important; }
     
-    /* تحسين مظهر العناوين فوق الخلفية الجديدة */
-    h1, h2, h3 { color: #1e293b !important; font-weight: 700 !important; }
+    /* فرض اللون الأسود على العناوين والمدخلات والمكتوبات */
+    h1, h2, h3, h4, h5, h6, label, p, span, li, td, th { color: #000000 !important; font-weight: 700 !important; }
+    input, select, textarea { color: #000000 !important; font-weight: bold !important; }
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center; color: #1e293b; margin-bottom: 0;'>📦 مؤسسة جَايَا لَك للتوصيل</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #475569; font-size: 15px; font-weight: bold;'>الخدمة الأسرع لتوصيل المواد الغذائية والطلبات - كِتَاب</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>📦  جَايَا لَك للتوصيل</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 15px; font-weight: bold;'>الخدمة الأسرع لتوصيل المواد الغذائية والطلبات - كِتَاب</p>", unsafe_allow_html=True)
 st.write("---")
 
 tab_client, tab_track, tab_driver, tab_manager = st.tabs(["👤 بوابة العميل / إرسال طلب", "🔍 تتبع حالة الشحنة", "🛵 واجهة المندوب الميداني", "💼 لوحة التحكم والمدير"])
@@ -380,14 +394,14 @@ with tab_driver:
                         
                         st.markdown(f"""
                         <div class='card'>
-                        <h4 style='color:#0284c7;'>🔢 شحنة رقم: {m[0]}</h4>
+                        <h4 style='color:#0284c7 !important;'>🔢 شحنة رقم: {m[0]}</h4>
                         <b>📍 المسار الجغرافي للرحلة:</b> من [ {m[3]} ] 👈 إلى [ {m[4]} ]<br>
                         <b>👤 اسم الزبون المعتمد:</b> {m[1]}<br>
                         <b>📞 رقم هاتف العميل (خاص بك): <span style='color:green; font-weight:bold;'>{phone_display}</span></b><br>
                         <b>📝 توجيهات وملاحظات العميل:</b> <span style='color: #1e3a8a;'>{notes_display}</span><br>
                         <b>💳 آلية السداد المعتمدة:</b> {m[9]}<br>
                         <hr>
-                        <h5 style='color:red;'>💰 الحساب المالي المطلوب تصفيتة واستلامه: {m[7]:,} ريال</h5>
+                        <h5 style='color:red !important;'>💰 الحساب المالي المطلوب تصفيتة واستلامه: {m[7]:,} ريال</h5>
                         </div>
                         """, unsafe_allow_html=True)
                         
