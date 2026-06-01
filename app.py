@@ -26,13 +26,13 @@ for folder in [VOICE_DIR, IMAGE_DIR, BACKUP_DIR]:
 # ==========================================
 
 def hash_password(password):
-    # 🔒 (نصيحة 3) إضافة ملح أمني معقد (Salt) لحماية كلمات المرور من التخمين
+    # 🔒 إضافة ملح أمني معقد (Salt) لحماية كلمات المرور من التخمين
     SECRET_SALT = "JayaLak_Secure_2026_@Key"
     salted_pass = password + SECRET_SALT
     return hashlib.sha256(salted_pass.encode()).hexdigest()
 
 def get_db_connection():
-    # 💡 (نصيحة 1) حل مشكلة قفل قاعدة البيانات بالتزامن وزيادة وقت الانتظار وتفعيل WAL
+    # 💡 حل مشكلة قفل قاعدة البيانات بالتزامن وزيادة وقت الانتظار وتفعيل WAL
     conn = sqlite3.connect('jaya_lak.db', timeout=20)
     conn.execute("PRAGMA journal_mode=WAL;")
     return conn
@@ -48,7 +48,7 @@ def make_backup():
         pass
 
 def init_db():
-    # 💾 (نصيحة 4) استخدام "with" لضمان إغلاق قاعدة البيانات تلقائياً وتفادي تسريب الذاكرة
+    # 💾 استخدام "with" لضمان إغلاق قاعدة البيانات تلقائياً وتفادي تسريب الذاكرة
     with get_db_connection() as conn:
         cursor = conn.cursor()
         
@@ -100,16 +100,22 @@ def init_db():
             )
         ''')
         
+        # 🔑 تحديث وضمان مزامنة كلمة المرور المعتمدة admin123 بالنظام الأمني الجديد تلقائياً
+        default_hashed = hash_password("admin123")
         cursor.execute("SELECT value FROM settings WHERE key='admin_password'")
         if not cursor.fetchone():
-            default_hashed = hash_password("admin123")
             cursor.execute("INSERT INTO settings VALUES ('admin_password', ?)", (default_hashed,))
+        else:
+            cursor.execute("UPDATE settings SET value=? WHERE key='admin_password'", (default_hashed,))
             
+        # مزامنة كباتن الحركة الافتراضيين مع الـ Salt الجديد
+        d_pass = hash_password("1234")
         cursor.execute("SELECT COUNT(*) FROM drivers")
         if cursor.fetchone()[0] == 0:
-            d_pass = hash_password("1234")
             cursor.execute("INSERT INTO drivers VALUES ('DRV-101', 'كابتن علي اليماني', '771111111', 'مدينة كتاب', ?)", (d_pass,))
             cursor.execute("INSERT INTO drivers VALUES ('DRV-102', 'كابتن محمد الحاشدي', '772222222', 'قرى الصفي', ?)", (d_pass,))
+        else:
+            cursor.execute("UPDATE drivers SET password=? WHERE id IN ('DRV-101', 'DRV-102')", (d_pass,))
             
         conn.commit()
     make_backup()
@@ -159,7 +165,7 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
     
-    /* 🔒 (حل مشكلة الزر) إخفاء أيقونة جيتهاب (القط الأسود)، القائمة، والأزرار العلوية تماماً لحماية البيانات */
+    /* 🔒 إخفاء أيقونة جيتهاب (القط الأسود)، القائمة، والأزرار العلوية تماماً لحماية البيانات */
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
     footer {visibility: hidden;}
@@ -227,9 +233,8 @@ st.write("---")
 
 tab_client, tab_track, tab_driver, tab_manager = st.tabs(["👤 بوابة العميل / إرسال طلب", "🔍 تتبع حالة الشحنة", "🛵 واجهة المندوب الميداني", "💼 لوحة التحكم والمدير"])
 
-# 🗺️ قاعدة البيانات الجغرافية
+# 🗺️ قاعدة البيانات الجغرافية المعدلة (تم حذف المركز الرئيسي كتاب بناء على طلبك)
 villages_db = {
-    "المركز الرئيسي كتاب": {"light": 300, "heavy": 500},
     "مدينة كتاب": {"light": 300, "heavy": 500},
     "قرية الحزة": {"light": 300, "heavy": 500},
     "قرية رباط القلعة": {"light": 400, "heavy": 600},
@@ -257,7 +262,7 @@ with tab_client:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("<h3 style='color:#16a34a;'>👤 بياناتك الشخصية</h3>", unsafe_allow_html=True)
     
-    # 📱 (حل المربعات الطويلة) تقسيم الحقول إلى أعمدة متناسقة تمنع تمدد الحقول الطويلة بشكل مزعج
+    # 📱 تنظيم المربعات بشكل عرضي متناسق للهواتف
     cl_col1, cl_col2 = st.columns(2)
     with cl_col1:
         c_name = st.text_input("اكتب اسمك الكامل هنا *", placeholder="مثال: أحمد حازم...", key="c_name")
@@ -268,7 +273,6 @@ with tab_client:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("<h3 style='color:#16a34a;'>📍 مسار التوصيل</h3>", unsafe_allow_html=True)
     
-    # 📱 تقسيم حقول مسار التوصيل إلى أعمدة
     loc_col1, loc_col2 = st.columns(2)
     with loc_col1:
         from_loc = st.selectbox("مكان استلام البضاعة (من أين؟) *", list(villages_db.keys()))
@@ -287,7 +291,6 @@ with tab_client:
     
     user_notes = st.text_area("إذا تريد كتابة ملاحظة إضافية للمندوب اكتبها هنا:", placeholder="مثال: كرتون صلصة، كيس دقيق...")
     
-    # 📱 تقسيم الخيارات الإضافية والصورة لتقليص مساحتها العمودية الطويلة
     opt_col1, opt_col2 = st.columns(2)
     with opt_col1:
         weight_opt = st.selectbox("اختر ثقل وحجم شحنتك الميدانية لتحديد السعر الاقتصادية لها:", ["📦 خفيفة", "📦 متوسطة", "📦 ثقيلة"])
@@ -319,7 +322,6 @@ with tab_client:
         elif from_loc == to_loc:
             st.error("❌ تنبيه مسار جغرافي خاطئ: نقطة الاستلام ونقطة التسليم متطابقتان.")
         else:
-            # 🔒 (نصيحة 5) تأمين فحص وحفظ الملفات المرفوعة من الامتدادات الخبيثة
             allowed_exts = ["jpg", "jpeg", "png", "wav", "mp3", "ogg"]
             v_ext = voice_file.name.split(".")[-1].lower() if voice_file else "wav"
             i_ext = image_file.name.split(".")[-1].lower() if image_file else None
@@ -339,7 +341,8 @@ with tab_client:
                 if duplicate_check:
                     st.error(f"⚠️ تنبيه أمني للعميل: لقد قمت بإرسال هذه الطلبية بالفعل وهي معلقة لدينا برقم ({duplicate_check[0]})! لمنع التكرار، لا حاجة لإرسالها مرة أخرى وسيتصل بك المندوب فوراً.")
                 else:
-                    order_id = f"GL-{random.randint(100, 999)}"
+                    # 🔢 كود التتبع معدل ليكون أرقام فقط مكونة من 6 خانات بناءً على طلبك
+                    order_id = str(random.randint(100000, 999999))
                     saved_voice_path = ""
                     saved_img_path = ""
                     
@@ -359,7 +362,7 @@ with tab_client:
                     )
                     conn.commit()
                     st.balloons()
-                    st.markdown(f"<div class='success-panel'>🎉 تم استلام طلبك بنجاح يا غالي! يرجى حفظ كود تتبع شحنتك: <b style='font-size:24px; color:#1d4ed8;'>{order_id}</b></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='success-panel'>🎉 تم استلام طلبك بنجاح يا غالي! يرجى حفظ كود تتبع شحنتك المكون من أرقام: <b style='font-size:24px; color:#1d4ed8;'>{order_id}</b></div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
@@ -369,10 +372,9 @@ with tab_track:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("🔍 استعلم عن شحنتك وحركتها فوراً")
     
-    # 📱 تضييق حقل الإدخال ليكون متناسقاً
     t_col1, _ = st.columns([2, 1])
     with t_col1:
-        track_id = st.text_input("أدخل كود تتبع الشحنة الخاص بك (مثال: GL-105):", key="track_input_id").strip()
+        track_id = st.text_input("أدخل كود تتبع الشحنة الرقمي (مثال: 583921):", key="track_input_id").strip()
     
     if track_id:
         with get_db_connection() as conn:
@@ -402,7 +404,7 @@ with tab_track:
                 st.info(f"🛵 **المندوب المسؤول ميدانياً:** {driver_name}")
                 st.metric("المبلغ المطلوب تصفيتة", f"{res[5]:,} ريال يمني")
             else:
-                st.error("❌ عذراً، لم نجد أي شحنة مسجلة بهذا الكود.")
+                st.error("❌ عذراً، لم نجد أي شحنة مسجلة بهذا الكود الرقمي.")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
@@ -420,7 +422,6 @@ with tab_driver:
     if drvs:
         drvs_choices = {r[0]: f"{r[1]} - التغطية الميدانية: {r[3]}" for r in drvs}
         
-        # 📱 ترتيب حقول تسجيل دخول الكابتن بشكل عرضي أنيق
         drv_col1, drv_col2 = st.columns(2)
         with drv_col1:
             active_driver_id = st.selectbox("اختر اسمك لتسجيل الدخول الفوري:", list(drvs_choices.keys()), format_func=lambda x: drvs_choices[x])
@@ -474,7 +475,7 @@ with tab_driver:
                                 cursor.execute("UPDATE orders SET status='تم التسليم ✅' WHERE id=?", (m[0],))
                                 conn.commit()
                                 st.success(f"🎉 تم إنهاء وتثبيت تصفية الشحنة {m[0]} بنجاح!")
-                                st.invalidate_pages() # تفادي إعادة التشغيل العنيفة
+                                st.invalidate_pages()
                                 st.rerun()
                             st.markdown("</div><br><br>", unsafe_allow_html=True)
                     else:
@@ -492,7 +493,6 @@ with tab_manager:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.subheader("💼 غُرفة العمليات والتحكم المركزي")
     
-    # 📱 تضييق مربع إدخال كلمة مرور الإدارة
     adm_col1, _ = st.columns([2, 1])
     with adm_col1:
         password_input = st.text_input("🔑 أدخل كلمة مرور الإدارة المركزية لفتح لوحة التحكم وبوابة البيانات:", type="password", key="admin_pwd_main")
@@ -516,7 +516,7 @@ with tab_manager:
         elif current_pending_count < st.session_state.last_pending_count:
             st.session_state.last_pending_count = current_pending_count
 
-        # 🔄 (نصيحة 2) استخدام نظام الأجزاء الآمن للتحديث التلقائي الفعال بدون جافا سكريبت ضارة
+        # 🔄 استخدام نظام الأجزاء الآمن للتحديث التلقائي الفعال بدون جافا سكريبت ضارة
         @st.fragment(run_every="10s")
         def render_manager_dashboard():
             with get_db_connection() as conn:
