@@ -233,8 +233,9 @@ st.write("---")
 
 tab_client, tab_track, tab_driver, tab_manager = st.tabs(["👤 بوابة العميل / إرسال طلب", "🔍 تتبع حالة الشحنة", "🛵 واجهة المندوب الميداني", "💼 لوحة التحكم والمدير"])
 
-# 🗺️ قاعدة البيانات الجغرافية المعدلة (تم حذف المركز الرئيسي كتاب بناء على طلبك)
-villages_db = {
+# 🗺️ قاعدة البيانات الجغرافية الكاملة لإصدار "مكان الاستلام"
+from_locations_db = {
+    "المركز الرئيسي كتاب": {"light": 300, "heavy": 500},
     "مدينة كتاب": {"light": 300, "heavy": 500},
     "قرية الحزة": {"light": 300, "heavy": 500},
     "قرية رباط القلعة": {"light": 400, "heavy": 600},
@@ -255,6 +256,9 @@ villages_db = {
     "قرى الصفي": {"light": 1500, "heavy": 2500}
 }
 
+# 🗺️ قاعدة بيانات تسليم البضاعة (تم حذف المركز الرئيسي كتاب من هنا فقط)
+to_locations_db = {k: v for k, v in from_locations_db.items() if k != "المركز الرئيسي كتاب"}
+
 # -------------------------------------------------------------------------
 # 1. بوابة العميل - نموذج إرسال طلب
 # -------------------------------------------------------------------------
@@ -262,7 +266,6 @@ with tab_client:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
     st.markdown("<h3 style='color:#16a34a;'>👤 بياناتك الشخصية</h3>", unsafe_allow_html=True)
     
-    # 📱 تنظيم المربعات بشكل عرضي متناسق للهواتف
     cl_col1, cl_col2 = st.columns(2)
     with cl_col1:
         c_name = st.text_input("اكتب اسمك الكامل هنا *", placeholder="مثال: أحمد حازم...", key="c_name")
@@ -275,9 +278,9 @@ with tab_client:
     
     loc_col1, loc_col2 = st.columns(2)
     with loc_col1:
-        from_loc = st.selectbox("مكان استلام البضاعة (من أين؟) *", list(villages_db.keys()))
+        from_loc = st.selectbox("مكان استلام البضاعة (من أين؟) *", list(from_locations_db.keys()))
     with loc_col2:
-        to_loc = st.selectbox("مكان تسليم البضاعة لبيتك (إلى أين؟) *", list(villages_db.keys()))
+        to_loc = st.selectbox("مكان تسليم البضاعة لبيتك (إلى أين؟) *", list(to_locations_db.keys()))
     st.markdown("</div>", unsafe_allow_html=True)
     
     st.markdown("<div class='voice-box'>", unsafe_allow_html=True)
@@ -307,8 +310,8 @@ with tab_client:
         jeeb_tx = st.text_input("أدخل رقم إشعار عملية التحويل المالي للتأكيد:")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    light_price = max(villages_db[from_loc]["light"], villages_db[to_loc]["light"])
-    heavy_price = max(villages_db[from_loc]["heavy"], villages_db[to_loc]["heavy"])
+    light_price = max(from_locations_db[from_loc]["light"], to_locations_db[to_loc]["light"])
+    heavy_price = max(from_locations_db[from_loc]["heavy"], to_locations_db[to_loc]["heavy"])
     medium_price = int((light_price + heavy_price) / 2)
     final_cost = heavy_price if is_emergency else (light_price if "خفيفة" in weight_opt else (medium_price if "متوسطة" in weight_opt else heavy_price))
     display_type = "🚨 طوارئ مستعجلة" if is_emergency else f"عادي - {weight_opt}"
@@ -327,7 +330,7 @@ with tab_client:
             i_ext = image_file.name.split(".")[-1].lower() if image_file else None
             
             if image_file and i_ext not in allowed_exts:
-                st.error("❌ غير مسموح برفع هذا النوع من الملفات الخبيثة!")
+                st.error("❌ غير مسموح برفع هذا النوع من الملفات!")
                 st.stop()
 
             with get_db_connection() as conn:
@@ -339,9 +342,8 @@ with tab_client:
                 duplicate_check = cursor.fetchone()
                 
                 if duplicate_check:
-                    st.error(f"⚠️ تنبيه أمني للعميل: لقد قمت بإرسال هذه الطلبية بالفعل وهي معلقة لدينا برقم ({duplicate_check[0]})! لمنع التكرار، لا حاجة لإرسالها مرة أخرى وسيتصل بك المندوب فوراً.")
+                    st.error(f"⚠️ تنبيه أمني للعميل: لقد قمت بإرسال هذه الطلبية بالفعل وهي معلقة لدينا برقم ({duplicate_check[0]})!")
                 else:
-                    # 🔢 كود التتبع معدل ليكون أرقام فقط مكونة من 6 خانات بناءً على طلبك
                     order_id = str(random.randint(100000, 999999))
                     saved_voice_path = ""
                     saved_img_path = ""
@@ -475,7 +477,6 @@ with tab_driver:
                                 cursor.execute("UPDATE orders SET status='تم التسليم ✅' WHERE id=?", (m[0],))
                                 conn.commit()
                                 st.success(f"🎉 تم إنهاء وتثبيت تصفية الشحنة {m[0]} بنجاح!")
-                                st.invalidate_pages()
                                 st.rerun()
                             st.markdown("</div><br><br>", unsafe_allow_html=True)
                     else:
@@ -511,25 +512,25 @@ with tab_manager:
             
         if current_pending_count > st.session_state.last_pending_count:
             st.components.v1.html(play_sound_js("https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav"), height=0)
-            st.toast("🚨 تنبيه: وصل طلب جديد معلق للتو في النظام ينظر المراجعة!")
+            st.toast("🚨 تنبيه: وصل طلب جديد معلق للتو في النظام!")
             st.session_state.last_pending_count = current_pending_count
         elif current_pending_count < st.session_state.last_pending_count:
             st.session_state.last_pending_count = current_pending_count
 
-        # 🔄 استخدام نظام الأجزاء الآمن للتحديث التلقائي الفعال بدون جافا سكريبت ضارة
+        # 🔄 استخدام نظام الأجزاء الآمن للتحديث التلقائي الفعال والمصحح من الأخطاء
         @st.fragment(run_every="10s")
         def render_manager_dashboard():
             with get_db_connection() as conn:
                 cursor = conn.cursor()
                 
-                with st.sidebar:
-                    st.markdown("### 🛠️ الحماية المتقدمة")
-                    new_sys_pwd = st.text_input("تغيير كلمة مرور الإدارة الحالية:", type="password", key="change_sys_pwd")
-                    if st.button("💾 حفظ وتشفير الكلمة الجديدة"):
-                        if new_sys_pwd.strip():
-                            update_admin_password(new_sys_pwd.strip())
-                            st.success("🔒 تم تشفير وحفظ كلمة المرور بنجاح في قاعدة البيانات!")
-                            st.rerun()
+                # 🛠️ الحماية المتقدمة تم وضعها في صلب اللوحة وتصحيح الكود المسبب للأخطاء
+                st.markdown("### 🛠️ الحماية المتقدمة")
+                new_sys_pwd = st.text_input("تغيير كلمة مرور الإدارة الحالية:", type="password", key="change_sys_pwd")
+                if st.button("💾 حفظ وتشفير الكلمة الجديدة"):
+                    if new_sys_pwd.strip():
+                        update_admin_password(new_sys_pwd.strip())
+                        st.success("🔒 تم تشفير وحفظ كلمة المرور بنجاح في قاعدة البيانات!")
+                        st.rerun()
                 
                 cursor.execute("SELECT * FROM orders")
                 order_rows = cursor.fetchall()
@@ -578,7 +579,7 @@ with tab_manager:
                         new_drv_name = st.text_input("اسم الكابتن الميداني :")
                         new_drv_phone = st.text_input("رقم هاتف المندوب الخاص به:", max_chars=9, key="add_phone")
                     with col_d2:
-                        new_drv_village = st.selectbox("القرية أو عزلة التغطية الرئيسية له:", list(villages_db.keys()), key="add_vil")
+                        new_drv_village = st.selectbox("القرية أو عزلة التغطية الرئيسية له:", list(from_locations_db.keys()), key="add_vil")
                         new_drv_password = st.text_input("🔐 عيّن كلمة سر خاصة لهذا المندوب:", type="password", key="add_pwd")
                         
                     if st.button("💾 حفظ المندوب الجديد في النظام"):
@@ -607,7 +608,7 @@ with tab_manager:
                             edit_name = st.text_input("تعديل الاسم:", value=curr_drv_data[1])
                             edit_phone = st.text_input("تعديل رقم الهاتف الميداني:", value=curr_drv_data[2], max_chars=9)
                         with col_e2:
-                            edit_village = st.selectbox("تعديل نطاق وعزلة التغطية:", list(villages_db.keys()), index=list(villages_db.keys()).index(curr_drv_data[3]))
+                            edit_village = st.selectbox("تعديل نطاق وعزلة التغطية:", list(from_locations_db.keys()), index=list(from_locations_db.keys()).index(curr_drv_data[3]))
                             edit_pass = st.text_input("🔐 تحديث كلمة السر للمندوب (اتركه فارغاً إذا لا تريد تغييرها):", type="password", key="edit_drv_pass_sec")
                         
                         col_actions = st.columns(2)
