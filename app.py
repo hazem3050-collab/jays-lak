@@ -268,7 +268,7 @@ with tab_client:
     
     cl_col1, cl_col2 = st.columns(2)
     with cl_col1:
-        c_name = st.text_input("اكتب اسمك الكامل هنا *", placeholder="مثال: أحمد حازم...", key="c_name")
+        c_name = st.text_input("اكتب اسمك الكامل هنا *", placeholder="مثال: ......", key="c_name")
     with cl_col2:
         c_phone = st.text_input("رقم هاتفك للتواصل (9 أرقام) *", max_chars=9, placeholder="77XXXXXXX", key="c_phone")
     st.markdown("</div>", unsafe_allow_html=True)
