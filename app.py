@@ -50,7 +50,6 @@ def init_db():
     with get_db_connection() as conn:
         cursor = conn.cursor()
         
-        # إنشاء جدول الطلبات مع أعمدة التوقيت الجديدة
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS orders (
                 id TEXT PRIMARY KEY,
@@ -71,7 +70,6 @@ def init_db():
             )
         ''')
         
-        # التحقق من وجود الأعمدة لتجنب المشاكل عند التحديث
         cursor.execute("PRAGMA table_info(orders)")
         columns = [column[1] for column in cursor.fetchall()]
         if 'voice_path' not in columns:
@@ -140,6 +138,7 @@ def update_admin_whatsapp(new_phone):
         cursor.execute("UPDATE settings SET value=? WHERE key='admin_whatsapp'", (new_phone,))
         conn.commit()
 
+# دالة إنشاء روابط الواتساب
 def send_whatsapp_notification(phone, message):
     if phone.startswith("0"):
         phone = phone[1:]
@@ -147,6 +146,15 @@ def send_whatsapp_notification(phone, message):
         phone = "967" + phone
     encoded_msg = urllib.parse.quote(message)
     return f"https://wa.me/{phone}?text={encoded_msg}"
+
+# دالة إنشاء روابط الرسائل النصية المباشرة للهاتف SMS
+def send_sms_notification(phone, message):
+    if phone.startswith("0"):
+        phone = phone[1:]
+    if not phone.startswith("967") and not phone.startswith("+967"):
+        phone = "+967" + phone
+    encoded_msg = urllib.parse.quote(message)
+    return f"sms:{phone}?&body={encoded_msg}"
 
 # ==========================================
 # 🎨 واجهة وتصميم التطبيق والخلفية الاحترافية
@@ -158,7 +166,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# نظام التحذير عند انقطاع الشبكة في الميدان
 st.components.v1.html("""
 <script>
 window.addEventListener('offline', function(e) {
@@ -212,22 +219,24 @@ st.markdown("""
     .price-tag { background-color: rgba(239, 246, 255, 0.95); color: #1d4ed8 !important; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; font-size: 22px; border: 2px dashed #3b82f6; }
     .price-tag * { color: #1d4ed8 !important; }
     
-    /* أزرار ضخمة ومريحة لسهولة الضغط في الميدان أو السيارة */
-    .big-driver-btn button, .big-send-btn button, .whatsapp-btn a, .role-btn button {
+    /* أزرار الإشعارات الكبيرة */
+    .big-driver-btn button, .big-send-btn button, .whatsapp-btn a, .sms-btn a, .role-btn button {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         width: 100% !important;
-        height: 65px !important;
+        height: 60px !important;
         background-color: #16a34a !important;
-        font-size: 20px !important;
+        font-size: 18px !important;
         font-weight: bold !important;
         border-radius: 14px !important;
         color: white !important;
         text-decoration: none !important;
         box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.3) !important;
+        margin-bottom: 8px !important;
     }
     .whatsapp-btn a { background-color: #25D366 !important; box-shadow: 0 10px 15px -3px rgba(37, 211, 102, 0.3) !important; }
+    .sms-btn a { background-color: #0284c7 !important; box-shadow: 0 10px 15px -3px rgba(2, 132, 199, 0.3) !important; }
     .role-btn button { background-color: #1e293b !important; box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.2) !important; }
     .back-btn button { background-color: #64748b !important; height: 45px !important; font-size: 16px !important; }
     
@@ -322,14 +331,16 @@ elif st.session_state.current_role == "client_portal":
             st.success(f"🎉 تم استلام طلبك بنجاح! كود تتبع شحنتك الميداني هو: {st.session_state.last_order_id}")
             
             admin_tel = get_admin_whatsapp()
-            client_msg = f"🚨 تنبيه لإدارة جايا لك: قمت بإرسال طلبية جديدة في النظام برقم ({st.session_state.last_order_id})، يرجى مراجعتها وتعميد المندوب."
-            wa_url = send_whatsapp_notification(admin_tel, client_msg)
+            client_msg = f"🚨 طلب جديد في جايا لك برقم ({st.session_state.last_order_id}). يرجى المراجعة والتعميد الفوري."
             
-            st.markdown(f"""
-            <div class='whatsapp-btn' style='text-align:center;'>
-                <a href="{wa_url}" target="_blank">💬 اضغط هنا لتنبيه الإدارة الفوري عبر الواتساب خارج التطبيق</a>
-            </div>
-            """, unsafe_allow_html=True)
+            wa_url = send_whatsapp_notification(admin_tel, client_msg)
+            sms_url = send_sms_notification(admin_tel, client_msg)
+            
+            col_notif1, col_notif2 = st.columns(2)
+            with col_notif1:
+                st.markdown(f"<div class='whatsapp-btn'><a href='{wa_url}' target='_blank'>💬 إشعار واتساب للإدارة</a></div>", unsafe_allow_html=True)
+            with col_notif2:
+                st.markdown(f"<div class='sms-btn'><a href='{sms_url}'>✉️ إرسال رسالة نصية SMS</a></div>", unsafe_allow_html=True)
             
             if st.button("🔄 إرسال طلب شحنة جديدة أخرى"):
                 st.session_state.client_order_success = False
@@ -393,7 +404,6 @@ elif st.session_state.current_role == "client_portal":
                     saved_voice_path = ""
                     saved_img_path = ""
                     
-                    # التقاط وقت وتاريخ الطلب الحالي بدقة ثانية وثواني
                     current_time_str = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
                     
                     if voice_file is not None:
@@ -455,7 +465,7 @@ elif st.session_state.current_role == "client_portal":
         st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# 🛵 ج: واجهة المندوب المستقلة (تسجيل وقت التسليم الفعلي)
+# 🛵 ج: واجهة المندوب المستقلة (إرسال الإشعارات المزدوجة عند التسليم)
 # -------------------------------------------------------------------------
 elif st.session_state.current_role == "driver_portal":
     st.markdown("<h2 style='color:#1e293b;'>🛵 واجهة المندوب وكباتن الحركة الميدانية</h2>", unsafe_allow_html=True)
@@ -505,20 +515,21 @@ elif st.session_state.current_role == "driver_portal":
                             
                             st.markdown("<div class='big-driver-btn'>", unsafe_allow_html=True)
                             if st.button(f"✅ تأكيد تسليم شحنة {m[0]} وتصفية المالي", key=f"drv_btn_{m[0]}"):
-                                # تسجيل توقيت التسليم الفوري الدقيق عند ضغط المندوب
                                 current_delivery_str = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
                                 cursor.execute("UPDATE orders SET status='تم التسليم ✅', delivery_time=? WHERE id=?", (current_delivery_str, m[0]))
                                 conn.commit()
                                 
-                                cust_msg = f"🎉 عميلنا العزيز ({m[1]}): تم تسليم شحنتك الميدانية رقم ({m[0]}) وتصفية حساب التوصيل بنجاح في تمام الساعة ({current_delivery_str}). شكراً لثقتكم بجايا لك!"
+                                cust_msg = f"تم تسليم طلبك رقم ({m[0]}) وتصفية الحساب في ({current_delivery_str}). شكراً لتعاملك مع جايا لك!"
                                 cust_wa_url = send_whatsapp_notification(m[2], cust_msg)
+                                cust_sms_url = send_sms_notification(m[2], cust_msg)
                                 
                                 st.success("🎉 تم الإنهاء والتصفية وتسجيل وقت التسليم بنجاح!")
-                                st.markdown(f"""
-                                <div class='whatsapp-btn' style='text-align:center;'>
-                                    <a href="{cust_wa_url}" target="_blank">💬 اضغط هنا لإرسال إشعار تسليم الشحنة للزبون عبر الواتساب خارج التطبيق</a>
-                                </div>
-                                """, unsafe_allow_html=True)
+                                
+                                col_d_notif1, col_d_notif2 = st.columns(2)
+                                with col_d_notif1:
+                                    st.markdown(f"<div class='whatsapp-btn'><a href='{cust_wa_url}' target='_blank'>💬 إشعار واتساب للزبون</a></div>", unsafe_allow_html=True)
+                                with col_d_notif2:
+                                    st.markdown(f"<div class='sms-btn'><a href='{cust_sms_url}'>✉️ رسالة نصية SMS للزبون</a></div>", unsafe_allow_html=True)
                             st.markdown("</div><br>", unsafe_allow_html=True)
                     else:
                         st.info("🟢 لا توجد شحنات معلقة لك في الميدان حالياً. عمل ممتاز!")
@@ -528,7 +539,7 @@ elif st.session_state.current_role == "driver_portal":
         st.info("ℹ️ لا يوجد مناديب مسجلين في النظام حالياً.")
 
 # -------------------------------------------------------------------------
-# 💼 د: لوحة التحكم والمدير المركزي (الترتيب الأحدث، تفصيل المنجزة والجديدة)
+# 💼 د: لوحة التحكم والمدير المركزي (أزرار إرسال مزدوجة: واتساب + SMS)
 # -------------------------------------------------------------------------
 elif st.session_state.current_role == "manager_portal":
     st.markdown("<h2 style='color:#1e293b;'>💼 لوحة إدارة العمليات المركزية</h2>", unsafe_allow_html=True)
@@ -552,7 +563,6 @@ elif st.session_state.current_role == "manager_portal":
             
             st.write("---")
             
-            # جلب كافة البيانات والإحصائيات المالية
             cursor.execute("SELECT * FROM orders")
             all_orders_for_stats = cursor.fetchall()
             delivered_revenue = sum(row[7] for row in all_orders_for_stats if row[6] == "تم التسليم ✅")
@@ -567,7 +577,6 @@ elif st.session_state.current_role == "manager_portal":
 
             st.write("---")
             
-            # أقسام عرض الطلبات المفصلة
             st.markdown("### 📊 كشوفات وتقارير حركة الطلبات اليومية")
             manager_view_tab1, manager_view_tab2, manager_view_tab3 = st.tabs([
                 "✨ 1. الطلبات اليومية الجديدة (في الأعلى)", 
@@ -575,15 +584,13 @@ elif st.session_state.current_role == "manager_portal":
                 "🛠️ 3. إدارة المناديب والكباتن"
             ])
             
-            # --- التبويب الأول: الطلبات الجديدة بانتظار التوافق (الأحدث في الأعلى دائماً) ---
+            # --- التبويب الأول: الطلبات الجديدة بانتظار التوجيه ---
             with manager_view_tab1:
                 st.markdown("#### 🔥 الطلبات الجديدة الواردة بانتظار التوجيه والتعميد:")
-                # استعلام مرتب تنازلياً حسب ROWID ليكون الطلب الجديد في أعلى القائمة تماماً
                 cursor.execute("SELECT * FROM orders WHERE status='بانتظار الموافقة' ORDER BY rowid DESC")
                 new_orders = cursor.fetchall()
                 
                 if new_orders:
-                    # عرض كجدول بيانات تفصيلي دقيق لراحة المدير
                     new_orders_data = [{
                         "رقم الشحنة": row[0],
                         "تاريخ ووقت الطلب": row[13],
@@ -599,7 +606,6 @@ elif st.session_state.current_role == "manager_portal":
                     st.dataframe(new_orders_data, use_container_width=True)
                     
                     st.markdown("#### 🎮 وحدة التوجيه والإسناد السريع للمناديب:")
-                    # ميكانيكية الإسناد المباشر
                     assignable_ids = [r[0] for r in new_orders]
                     selected_order_id = st.selectbox("اختر رقم الطلب المراد إسناده لكابتن الحركة الآن:", assignable_ids)
                     
@@ -613,37 +619,42 @@ elif st.session_state.current_role == "manager_portal":
                         driver_options = {r[0]: f"{r[1]} ({r[3]})" for r in driver_rows_db}
                         selected_driver_id = st.selectbox("اختر الكابتن الميداني المستهدف والمتاح للتوصيل:", list(driver_options.keys()), format_func=lambda x: driver_options[x])
                         
-                        if st.button("⚡ اعتماد الشحنة وتجهيز إشعار المندوب الخارجي"):
+                        if st.button("⚡ اعتماد الشحنة وتجهيز إشعارات التوجيه الخارجية"):
                             cursor.execute("UPDATE orders SET status='جاري التوصيل', driver=? WHERE id=?", (selected_driver_id, selected_order_id))
                             conn.commit()
                             
                             cursor.execute("SELECT name, phone FROM drivers WHERE id=?", (selected_driver_id,))
                             drv_data_selected = cursor.fetchone()
                             
-                            drv_msg = f"🛵 كابتن {drv_data_selected[0]} المحترم: تم إسناد شحنة ميدانية جديدة لك برقم ({selected_order_id}) من [ {o_inf[4]} ] إلى [ {o_inf[0]} ]. الزبون: {o_inf[1]}، هاتف: {o_inf[2]}. الحساب المطلوب تصفيتة: {o_inf[3]} ريال يمني. يرجى المباشرة فوراً."
-                            drv_wa_url = send_whatsapp_notification(drv_data_selected[1], drv_msg)
+                            # صياغة النص للإشعارات
+                            drv_msg = f"طلب جديد رقم ({selected_order_id}) من [{o_inf[4]}] إلى [{o_inf[0]}]. الزبون: {o_inf[1]}، هاتف: {o_inf[2]}. الحساب: {o_inf[3]} ريال. باشر فوراً."
                             
-                            st.success(f"✅ تم تعميد الشحنة {selected_order_id} وجاري تحويلها للمندوب.")
-                            st.markdown(f"""
-                            <div class='whatsapp-btn' style='text-align:center;'>
-                                <a href="{drv_wa_url}" target="_blank">💬 اضغط هنا لإرسال الشحنة لهاتف المندوب على الواتساب خارج التطبيق فوراً</a>
-                            </div>
-                            """, unsafe_allow_html=True)
+                            # حفظ روابط التوجيه في متغيرات الجلسة لعرض الأزرار بعد الضغط مباشرة
+                            st.session_state.last_assigned_wa = send_whatsapp_notification(drv_data_selected[1], drv_msg)
+                            st.session_state.last_assigned_sms = send_sms_notification(drv_data_selected[1], drv_msg)
+                            st.success(f"✅ تم تعميد الشحنة {selected_order_id} وإسنادها للكابتن {drv_data_selected[0]}.")
                             st.rerun()
+                        
+                        # إظهار أزرار الإرسال بعد الضغط المباشر لتسهيل الحركة للمدير
+                        if 'last_assigned_wa' in st.session_state:
+                            st.markdown("##### 📢 أرسل أمر التكليف للكابتن الميداني عبر:")
+                            c_col1, c_col2 = st.columns(2)
+                            with c_col1:
+                                st.markdown(f"<div class='whatsapp-btn'><a href='{st.session_state.last_assigned_wa}' target='_blank'>💬 إرسال عبر الواتساب</a></div>", unsafe_allow_html=True)
+                            with c_col2:
+                                st.markdown(f"<div class='sms-btn'><a href='{st.session_state.last_assigned_sms}'>✉️ إرسال عبر رسالة نصية SMS</a></div>", unsafe_allow_html=True)
                     else:
                         st.error("❌ لا يوجد كباتن مسجلين حالياً بالموقع، اذهب لتبويب إدارة المناديب أولاً لإضافتهم.")
                 else:
                     st.info("🟢 الخزنة نظيفة! لا توجد طلبات جديدة معلقة حالياً في المنظومة.")
 
-            # --- التبويب الثاني: الطلبات المنجزة بالتفصيل وتوقيتاتها الميدانية ---
+            # --- التبويب الثاني: الطلبات المنجزة بالتفصيل ---
             with manager_view_tab2:
                 st.markdown("#### ✅ قائمة جميع الطلبات المنجزة بالتفصيل والأوقات:")
-                # جلب الطلبات المنجزة بالكامل مع ترتيب الأحدث في الأعلى
                 cursor.execute("SELECT * FROM orders WHERE status='تم التسليم ✅' ORDER BY rowid DESC")
                 completed_orders = cursor.fetchall()
                 
                 if completed_orders:
-                    # جلب أسماء المناديب لربط الأكواد بالأسماء الصريحة
                     cursor.execute("SELECT id, name FROM drivers")
                     drivers_names_map = {r[0]: r[1] for r in cursor.fetchall()}
                     
@@ -659,13 +670,11 @@ elif st.session_state.current_role == "manager_portal":
                         "آلية الدفع المعتمدة": row[9],
                         "المبلغ المصفى": f"{row[7]:,} ريال"
                     } for row in completed_orders]
-                    
-                    # عرض تقرير مالي وإنجازي تفصيلي دقيق قابل للفرخ والبحث للمدير
                     st.dataframe(completed_orders_data, use_container_width=True)
                 else:
                     st.info("ℹ️ لم يتم تصفية وتسليم أي طلبات في الميدان حتى هذه اللحظة.")
 
-            # --- التبويب الثالث: إدارة وتعديل الكباتن والمناديب ---
+            # --- التبويب الثالث: إدارة وتعديل الكباتن ---
             with manager_view_tab3:
                 st.markdown("### 🛵 لوحة التحكم في المناديب وكباتن الحركة")
                 m_drv_tab1, m_drv_tab2 = st.tabs(["➕ إضافة مندوب جديد", "📋 إدارة وتعديل الكباتن الحاليين"])
