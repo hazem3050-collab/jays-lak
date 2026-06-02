@@ -32,7 +32,9 @@ def hash_password(password):
     return hashlib.sha256(salted_pass.encode()).hexdigest()
 
 def get_db_connection():
-    conn = sqlite3.connect('jaya_lak.db', timeout=20)
+    conn = sqlite3.connect('jaya_lak.db', timeout=30)
+    # تفعيل واجهة الفهارس بالأسماء لضمان دقة جلب معلومات الطلب
+    conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL;")
     return conn
 
@@ -47,10 +49,9 @@ def make_backup():
         pass
 
 def init_db():
-    with get_db_connection() as conn:
+    with sqlite3.connect('jaya_lak.db', timeout=30) as conn:
         cursor = conn.cursor()
         
-        # إنشاء جدول الطلبات مع أعمدة التوقيت الكاملة
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS orders (
                 id TEXT PRIMARY KEY,
@@ -123,7 +124,8 @@ def check_admin_password(input_pwd):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT value FROM settings WHERE key='admin_password'")
-        saved_hash = cursor.fetchone()[0]
+        res = cursor.fetchone()
+        saved_hash = res['value'] if res else ""
     return saved_hash == hash_password(input_pwd)
 
 def get_admin_whatsapp():
@@ -131,7 +133,7 @@ def get_admin_whatsapp():
         cursor = conn.cursor()
         cursor.execute("SELECT value FROM settings WHERE key='admin_whatsapp'")
         res = cursor.fetchone()
-        return res[0] if res else "770000000"
+        return res['value'] if res else "770000000"
 
 def update_admin_whatsapp(new_phone):
     with get_db_connection() as conn:
@@ -139,7 +141,6 @@ def update_admin_whatsapp(new_phone):
         cursor.execute("UPDATE settings SET value=? WHERE key='admin_whatsapp'", (new_phone,))
         conn.commit()
 
-# دالة روابط الواتساب الاحترافية
 def send_whatsapp_notification(phone, message):
     if phone.startswith("0"):
         phone = phone[1:]
@@ -148,7 +149,6 @@ def send_whatsapp_notification(phone, message):
     encoded_msg = urllib.parse.quote(message)
     return f"https://wa.me/{phone}?text={encoded_msg}"
 
-# دالة روابط الرسائل النصية المباشرة SMS
 def send_sms_notification(phone, message):
     if phone.startswith("0"):
         phone = phone[1:]
@@ -167,7 +167,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# نظام التحذير من انقطاع الإنترنت في الميدان لضمان عدم ضياع الكود
+# نظام التحذير من انقطاع الإنترنت في الميدان لضمان عدم ضياع البيانات
 st.components.v1.html("""
 <script>
 window.addEventListener('offline', function(e) {
@@ -187,9 +187,7 @@ st.markdown("""
     
     [data-testid="stViewerToolbar"] {display: none !important;}
     iframe[title="Manage app"] {display: none !important;}
-    div[data-testid="stManageAppButton"] {display: none !important;}
     button[title="Manage app"] {display: none !important;}
-    .st-emotion-cache-1lb4v3s {display: none !important;}
     
     .stApp {
         background-image: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), 
@@ -210,16 +208,14 @@ st.markdown("""
         background-color: rgba(255, 255, 255, 0.95); 
         padding: 22px; 
         border-radius: 16px; 
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); 
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
         margin-bottom: 18px; 
         border: 1px solid rgba(255, 255, 255, 0.8); 
-        backdrop-filter: blur(4px);
     }
     
     .voice-box { border: 2px dashed #16a34a; padding: 20px; background-color: rgba(240, 253, 244, 0.95); border-radius: 16px; margin-bottom: 15px; text-align: center; }
     .jeeb-panel { background-color: rgba(240, 253, 244, 0.95); border-right: 6px solid #0d9488; padding: 15px; border-radius: 8px; font-weight: bold; }
     .price-tag { background-color: rgba(239, 246, 255, 0.95); color: #1d4ed8 !important; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; font-size: 22px; border: 2px dashed #3b82f6; }
-    .price-tag * { color: #1d4ed8 !important; }
     
     .driver-notif-box {
         background-color: #f0fdfa;
@@ -230,7 +226,6 @@ st.markdown("""
         margin-bottom: 15px;
     }
     
-    /* أزرار الإشعارات والتكليفات الميدانية الكبيرة لسهولة الضغط */
     .big-driver-btn button, .big-send-btn button, .whatsapp-btn a, .sms-btn a, .role-btn button {
         display: flex !important;
         align-items: center !important;
@@ -246,9 +241,9 @@ st.markdown("""
         box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.3) !important;
         margin-bottom: 8px !important;
     }
-    .whatsapp-btn a { background-color: #25D366 !important; box-shadow: 0 10px 15px -3px rgba(37, 211, 102, 0.3) !important; }
-    .sms-btn a { background-color: #0284c7 !important; box-shadow: 0 10px 15px -3px rgba(2, 132, 199, 0.3) !important; }
-    .role-btn button { background-color: #1e293b !important; box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.2) !important; }
+    .whatsapp-btn a { background-color: #25D366 !important; }
+    .sms-btn a { background-color: #0284c7 !important; }
+    .role-btn button { background-color: #1e293b !important; }
     .back-btn button { background-color: #64748b !important; height: 45px !important; font-size: 16px !important; }
     
     h1, h2, h3, h4, h5, h6, label, p, span, li, td, th { color: #000000 !important; font-weight: 700 !important; }
@@ -273,7 +268,7 @@ if st.session_state.current_role != "main_gate":
         st.rerun()
     st.markdown("</div><br>", unsafe_allow_html=True)
 
-# قاعدة البيانات الجغرافية المعتمدة لأسعار التوصيل للقرى
+# قاعدة البيانات الجغرافية
 from_locations_db = {
     "المركز الرئيسي كتاب": {"light": 300, "heavy": 500},
     "مدينة كتاب": {"light": 300, "heavy": 500},
@@ -339,7 +334,7 @@ elif st.session_state.current_role == "client_portal":
 
         if st.session_state.client_order_success:
             st.markdown("<div class='card'>", unsafe_allow_html=True)
-            st.success(f"🎉 تم استلام طلبك بنجاح! كود تتبع شحنتك الميداني هو: {st.session_state.last_order_id}")
+            st.success(f"🎉 تم استلاف طلبك بنجاح! كود تتبع شحنتك الميداني هو: {st.session_state.last_order_id}")
             
             admin_tel = get_admin_whatsapp()
             client_msg = f"🚨 طلب جديد في جايا لك برقم ({st.session_state.last_order_id}). يرجى المراجعة والتعميد الفوري من لوحة المدير."
@@ -449,46 +444,46 @@ elif st.session_state.current_role == "client_portal":
         if track_id:
             with get_db_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT name, from_loc, to_loc, status, driver, cost, order_time, delivery_time FROM orders WHERE id=?", (track_id,))
+                cursor.execute("SELECT * FROM orders WHERE id=?", (track_id,))
                 res = cursor.fetchone()
                 
                 if res:
-                    status_text = res[3]
-                    driver_code = res[4]
+                    status_text = res['status']
+                    driver_code = res['driver']
                     driver_name = "لم يحدد بعد"
                     if driver_code != "لم يحدد":
                         cursor.execute("SELECT name FROM drivers WHERE id=?", (driver_code,))
                         d_res = cursor.fetchone()
                         if d_res:
-                            driver_name = d_res[0]
+                            driver_name = d_res['name']
                     
                     st.write("---")
-                    st.info(f"👤 **صاحب الطلب:** {res[0]}")
-                    st.warning(f"📍 **المسار:** من **{res[1]}** إلى **{res[2]}**")
-                    st.info(f"📅 **وقت إرسال الطلب:** {res[6]}")
-                    if res[7]:
-                        st.success(f"⏱️ **وقت التسليم الفعلي:** {res[7]}")
+                    st.info(f"👤 **صاحب الطلب:** {res['name']}")
+                    st.warning(f"📍 **المسار:** من **{res['from_loc']}** إلى **{res['to_loc']}**")
+                    st.info(f"📅 **وقت إرسال الطلب:** {res['order_time']}")
+                    if res['delivery_time']:
+                        st.success(f"⏱️ **وقت التسليم الفعلي:** {res['delivery_time']}")
                     st.success(f"📊 **حالة الشحنة الحالية:** {status_text}")
                     st.info(f"🛵 **المندوب المسؤول ميدانياً:** {driver_name}")
-                    st.metric("المبلغ المطلوب تصفيتة", f"{res[5]:,} ريال")
+                    st.metric("المبلغ المطلوب تصفيتة", f"{res['cost']:,} ريال")
                 else:
                     st.error("❌ عذراً، لم نجد أي شحنة مسجلة بهذا الكود الرقمي.")
         st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# 🛵 ج: واجهة المندوب المستقلة (مع إضافة صندوق الإشعارات المباشرة الذكي)
+# 🛵 ج: واجهة المندوب المستقلة (تم إصلاح خطأ الـ sqlite3 بالكامل)
 # -------------------------------------------------------------------------
 elif st.session_state.current_role == "driver_portal":
     st.markdown("<h2 style='color:#1e293b;'>🛵 واجهة المندوب وكباتن الحركة الميدانية</h2>", unsafe_allow_html=True)
     
-    st.markdown("<div class='card'>", unsafe_allow_html=True)
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM drivers")
         drvs = cursor.fetchall()
     
     if drvs:
-        drvs_choices = {r[0]: f"{r[1]} - التغطية: {r[3]}" for r in drvs}
+        drvs_choices = {r['id']: f"{r['name']} - التغطية: {r['assigned_village']}" for r in drvs}
+        st.markdown("<div class='card'>", unsafe_allow_html=True)
         drv_col1, drv_col2 = st.columns(2)
         with drv_col1:
             active_driver_id = st.selectbox("اختر اسمك لتسجيل الدخول الفوري:", list(drvs_choices.keys()), format_func=lambda x: drvs_choices[x])
@@ -501,73 +496,77 @@ elif st.session_state.current_role == "driver_portal":
                 cursor = conn.cursor()
                 cursor.execute("SELECT password, name FROM drivers WHERE id=?", (active_driver_id,))
                 drv_auth = cursor.fetchone()
-                saved_drv_hash = drv_auth[0]
-                drv_actual_name = drv_auth[1]
                 
-                if saved_drv_hash == hash_password(driver_password_input):
-                    
-                    # 🔔 [جديد ومتميز] صندوق إشعارات وتكليفات المندوب الواصلة من المدير مباشرة
+            if drv_auth and drv_auth['password'] == hash_password(driver_password_input):
+                drv_actual_name = drv_auth['name']
+                
+                # جلب البيانات بشكل آمن بفتح اتصال جديد ومغلق لكل عملية لعدم قفل قاعدة البيانات
+                with get_db_connection() as conn:
+                    cursor = conn.cursor()
                     cursor.execute("SELECT * FROM orders WHERE driver=? AND status='جاري التوصيل' ORDER BY order_time DESC LIMIT 1")
                     latest_mission = cursor.fetchone()
-                    
-                    if latest_mission:
-                        st.markdown(f"""
-                        <div class='driver-notif-box'>
-                            <h4 style='color:#0284c7 !important; margin:0;'>🔔 تنبيه تكليف جديد صادر من الإدارة الآن:</h4>
-                            <p style='margin:5px 0 0 0;'>تم إسناد الشحنة رقم <b>({latest_mission[0]})</b> لك المتوجهة إلى <b>{latest_mission[4]}</b>. يرجى مراجعة التفاصيل أدناه وتأكيد التحرك الميداني.</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    
-                    # عرض بقية المهام الجارية للمندوب
+                
+                if latest_mission:
+                    st.markdown(f"""
+                    <div class='driver-notif-box'>
+                        <h4 style='color:#0284c7 !important; margin:0;'>🔔 تنبيه تكليف جديد صادر من الإدارة الآن:</h4>
+                        <p style='margin:5px 0 0 0;'>تم إسناد الشحنة رقم <b>({latest_mission['id']})</b> لك المتوجهة إلى <b>{latest_mission['to_loc']}</b>. يرجى مراجعة التفاصيل أدناه وتأكيد التحرك الميداني.</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with get_db_connection() as conn:
+                    cursor = conn.cursor()
                     cursor.execute("SELECT * FROM orders WHERE driver=? AND status='جاري التوصيل' ORDER BY order_time DESC")
                     driver_missions = cursor.fetchall()
-                    
-                    if driver_missions:
-                        st.warning(f"⚠️ كابتن {drv_actual_name}: لديك ({len(driver_missions)}) شحنات جارية قيد التوصيل والتصفية:")
-                        for m in driver_missions:
-                            st.markdown(f"""
-                            <div class='card'>
-                            <h4 style='color:#0284c7 !important;'>🔢 شحنة رقم: {m[0]}</h4>
-                            <b>📅 وقت الطلب المعتمد:</b> {m[13]}<br>
-                            <b>📍 المسار الجغرافي:</b> من [ {m[3]} ] 👈 إلى [ {m[4]} ]<br>
-                            <b>👤 اسم الزبون:</b> {m[1]}<br>
-                            <b>📞 هاتف العميل: <span style='color:green; font-weight:bold;'>{m[2]}</span></b><br>
-                            <b>💳 آلية السداد:</b> {m[9]}<br>
-                            <b>📝 ملاحظات الطلب:</b> {m[10] if m[10] else 'لا يوجد'}<br>
-                            <h5 style='color:red !important;'>💰 الحساب المطلوب استلامه: {m[7]:,} ريال</h5>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            
-                            if m[11] and os.path.exists(m[11]):
-                                st.audio(m[11])
-                            
-                            st.markdown("<div class='big-driver-btn'>", unsafe_allow_html=True)
-                            if st.button(f"✅ تأكيد تسليم شحنة {m[0]} وتصفية المالي", key=f"drv_btn_{m[0]}"):
-                                current_delivery_str = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
-                                cursor.execute("UPDATE orders SET status='تم التسليم ✅', delivery_time=? WHERE id=?", (current_delivery_str, m[0]))
+                
+                if driver_missions:
+                    st.warning(f"⚠️ كابتن {drv_actual_name}: لديك ({len(driver_missions)}) شحنات جارية قيد التوصيل والتصفية:")
+                    for m in driver_missions:
+                        st.markdown(f"""
+                        <div class='card'>
+                        <h4 style='color:#0284c7 !important;'>🔢 شحنة رقم: {m['id']}</h4>
+                        <b>📅 وقت الطلب المعتمد:</b> {m['order_time']}<br>
+                        <b>📍 المسار الجغرافي:</b> من [ {m['from_loc']} ] 👈 إلى [ {m['to_loc']} ]<br>
+                        <b>👤 اسم الزبون:</b> {m['name']}<br>
+                        <b>📞 هاتف العميل: <span style='color:green; font-weight:bold;'>{m['phone']}</span></b><br>
+                        <b>💳 آلية السداد:</b> {m['payment_method']}<br>
+                        <b>📝 ملاحظات الطلب:</b> {m['notes'] if m['notes'] else 'لا يوجد'}<br>
+                        <h5 style='color:red !important;'>💰 الحساب المطلوب استلامه: {m['cost']:,} ريال</h5>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        if m['voice_path'] and os.path.exists(m['voice_path']):
+                            st.audio(m['voice_path'])
+                        
+                        st.markdown("<div class='big-driver-btn'>", unsafe_allow_html=True)
+                        if st.button(f"✅ تأكيد تسليم شحنة {m['id']} وتصفية المالي", key=f"drv_btn_{m['id']}"):
+                            current_delivery_str = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
+                            with get_db_connection() as conn:
+                                cursor = conn.cursor()
+                                cursor.execute("UPDATE orders SET status='تم التسليم ✅', delivery_time=? WHERE id=?", (current_delivery_str, m['id']))
                                 conn.commit()
-                                
-                                cust_msg = f"تم تسليم طلبك رقم ({m[0]}) وتصفية الحساب في ({current_delivery_str}). شكراً لتعاملك مع جايا لك!"
-                                cust_wa_url = send_whatsapp_notification(m[2], cust_msg)
-                                cust_sms_url = send_sms_notification(m[2], cust_msg)
-                                
-                                st.success("🎉 تم الإنهاء والتصفية وتسجيل وقت التسليم بنجاح!")
-                                
-                                col_d_notif1, col_d_notif2 = st.columns(2)
-                                with col_d_notif1:
-                                    st.markdown(f"<div class='whatsapp-btn'><a href='{cust_wa_url}' target='_blank'>💬 إشعار واتساب للزبون</a></div>", unsafe_allow_html=True)
-                                with col_d_notif2:
-                                    st.markdown(f"<div class='sms-btn'><a href='{cust_sms_url}'>✉️ رسالة نصية SMS للزبون</a></div>", unsafe_allow_html=True)
-                            st.markdown("</div><br>", unsafe_allow_html=True)
-                    else:
-                        st.info("🟢 لا توجد شحنات معلقة لك في الميدان حالياً. عمل ممتاز!")
+                            
+                            cust_msg = f"تم تسليم طلبك رقم ({m['id']}) وتصفية الحساب في ({current_delivery_str}). شكراً لتعاملك مع جايا لك!"
+                            cust_wa_url = send_whatsapp_notification(m['phone'], cust_msg)
+                            cust_sms_url = send_sms_notification(m['phone'], cust_msg)
+                            
+                            st.success("🎉 تم الإنهاء والتصفية وتسجيل وقت التسليم بنجاح!")
+                            
+                            col_d_notif1, col_d_notif2 = st.columns(2)
+                            with col_d_notif1:
+                                st.markdown(f"<div class='whatsapp-btn'><a href='{cust_wa_url}' target='_blank'>💬 إشعار واتساب للزبون</a></div>", unsafe_allow_html=True)
+                            with col_d_notif2:
+                                st.markdown(f"<div class='sms-btn'><a href='{cust_sms_url}'>✉️ رسالة نصية SMS للزبون</a></div>", unsafe_allow_html=True)
+                        st.markdown("</div><br>", unsafe_allow_html=True)
                 else:
-                    st.error("❌ خطأ: كلمة السر غير صحيحة.")
+                    st.info("🟢 لا توجد شحنات معلقة لك في الميدان حالياً. عمل ممتاز!")
+            else:
+                st.error("❌ خطأ: كلمة السر غير صحيحة أو غير متطابقة.")
     else:
         st.info("ℹ️ لا يوجد مناديب مسجلين في النظام حالياً.")
 
 # -------------------------------------------------------------------------
-# 💼 د: لوحة التحكم والمدير المركزي (تنظيم متقدم وجداول مصنفة بدقة)
+# 💼 د: لوحة التحكم والمدير المركزي (إصلاح خيار الإشعارات الفورية)
 # -------------------------------------------------------------------------
 elif st.session_state.current_role == "manager_portal":
     st.markdown("<h2 style='color:#1e293b;'>💼 لوحة إدارة العمليات المركزية</h2>", unsafe_allow_html=True)
@@ -579,6 +578,14 @@ elif st.session_state.current_role == "manager_portal":
     if password_input and check_admin_password(password_input):
         st.success("🔓 تم فتح البوابة والتحقق من صلاحيات المدير بنجاح.")
         
+        # حقول إبقاء الإشعارات نشطة في جلسة streamlit لمنع اختفائها
+        if 'show_assignment_notif' not in st.session_state:
+            st.session_state.show_assignment_notif = False
+            st.session_state.saved_wa_url = ""
+            st.session_state.saved_sms_url = ""
+            st.session_state.saved_drv_name = ""
+            st.session_state.saved_order_id = ""
+
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
@@ -593,8 +600,8 @@ elif st.session_state.current_role == "manager_portal":
             
             cursor.execute("SELECT * FROM orders")
             all_orders_for_stats = cursor.fetchall()
-            delivered_revenue = sum(row[7] for row in all_orders_for_stats if row[6] == "تم التسليم ✅")
-            pending_count = sum(1 for row in all_orders_for_stats if row[6] == "بانتظار الموافقة")
+            delivered_revenue = sum(row['cost'] for row in all_orders_for_stats if row['status'] == "تم التسليم ✅")
+            pending_count = sum(1 for row in all_orders_for_stats if row['status'] == "بانتظار الموافقة")
             
             st.markdown("<div class='card'>", unsafe_allow_html=True)
             m_col1, m_col2, m_col3 = st.columns(3)
@@ -612,69 +619,77 @@ elif st.session_state.current_role == "manager_portal":
                 "🛠️ 3. إدارة المناديب والكباتن"
             ])
             
-            # --- التبويب الأول: الطلبات الجديدة بانتظار التوجيه (الأحدث في الأعلى دائماً) ---
+            # --- التبويب الأول: الطلبات الجديدة بانتظار التوجيه ---
             with manager_view_tab1:
                 st.markdown("#### 🔥 الطلبات الجديدة الواردة بانتظار التوجيه والتعميد:")
                 cursor.execute("SELECT * FROM orders WHERE status='بانتظار الموافقة' ORDER BY rowid DESC")
                 new_orders = cursor.fetchall()
                 
                 if new_orders:
-                    # تنظيم الجدول المالي والبياني لراحة عين المدير
                     new_orders_data = [{
-                        "رقم الشحنة": row[0],
-                        "تاريخ ووقت وصول الطلب": row[13],
-                        "اسم العميل": row[1],
-                        "رقم العميل": row[2],
-                        "من منطقة": row[3],
-                        "إلى منطقة": row[4],
-                        "نوع وحجم الشحنة": row[5],
-                        "طريقة السداد": row[9],
-                        "الملاحظات": row[10],
-                        "تكلفة التوصيل": f"{row[7]:,} ريال"
+                        "رقم الشحنة": row['id'],
+                        "تاريخ ووقت وصول الطلب": row['order_time'],
+                        "اسم العميل": row['name'],
+                        "رقم العميل": row['phone'],
+                        "من منطقة": row['from_loc'],
+                        "إلى منطقة": row['to_loc'],
+                        "نوع وحجم الشحنة": row['type'],
+                        "طريقة السداد": row['payment_method'],
+                        "الملاحظات": row['notes'],
+                        "تكلفة التوصيل": f"{row['cost']:,} ريال"
                     } for row in new_orders]
                     st.dataframe(new_orders_data, use_container_width=True)
                     
-                    st.markdown("#### 🎮 وحدة التوجيه والإسناد السريع للمناديب (صندوق بريد المندوب الوارد):")
-                    assignable_ids = [r[0] for r in new_orders]
+                    st.markdown("#### 🎮 وحدة التوجيه والإسناد السريع للمناديب:")
+                    assignable_ids = [r['id'] for r in new_orders]
                     selected_order_id = st.selectbox("اختر رقم الطلب المراد إسناده لكابتن الحركة الآن:", assignable_ids)
                     
-                    cursor.execute("SELECT to_loc, name, phone, cost, from_loc FROM orders WHERE id=?", (selected_order_id,))
+                    cursor.execute("SELECT * FROM orders WHERE id=?", (selected_order_id,))
                     o_inf = cursor.fetchone()
                     
                     cursor.execute("SELECT * FROM drivers")
                     driver_rows_db = cursor.fetchall()
                     
                     if driver_rows_db:
-                        driver_options = {r[0]: f"{r[1]} ({r[3]})" for r in driver_rows_db}
+                        driver_options = {r['id']: f"{r['name']} ({r['assigned_village']})" for r in driver_rows_db}
                         selected_driver_id = st.selectbox("اختر الكابتن الميداني المستهدف والمتاح للتوصيل:", list(driver_options.keys()), format_func=lambda x: driver_options[x])
                         
-                        if st.button("⚡ اعتماد الشحنة وتجهيز إشعارات التوجيه الخارجية"):
+                        if st.button("⚡ اعتماد الشحنة وتجهيز أشعارات التوجيه الخارجية"):
                             cursor.execute("UPDATE orders SET status='جاري التوصيل', driver=? WHERE id=?", (selected_driver_id, selected_order_id))
                             conn.commit()
                             
                             cursor.execute("SELECT name, phone FROM drivers WHERE id=?", (selected_driver_id,))
                             drv_data_selected = cursor.fetchone()
                             
-                            drv_msg = f"طلب جديد رقم ({selected_order_id}) من [{o_inf[4]}] إلى [{o_inf[0]}]. الزبون: {o_inf[1]}، هاتف: {o_inf[2]}. الحساب: {o_inf[3]} ريال. باشر فوراً."
+                            drv_msg = f"طلب جديد رقم ({selected_order_id}) من [{o_inf['from_loc']}] إلى [{o_inf['to_loc']}]. الزبون: {o_inf['name']}، هاتف: {o_inf['phone']}. الحساب: {o_inf['cost']} ريال. باشر فوراً."
                             
-                            st.session_state.last_assigned_wa = send_whatsapp_notification(drv_data_selected[1], drv_msg)
-                            st.session_state.last_assigned_sms = send_sms_notification(drv_data_selected[1], drv_msg)
-                            st.success(f"✅ تم تعميد الشحنة {selected_order_id} وإرسالها لصندوق بريد الكابتن {drv_data_selected[0]} داخل واجهته بنجاح.")
+                            st.session_state.saved_wa_url = send_whatsapp_notification(drv_data_selected['phone'], drv_msg)
+                            st.session_state.saved_sms_url = send_sms_notification(drv_data_selected['phone'], drv_msg)
+                            st.session_state.saved_drv_name = drv_data_selected['name']
+                            st.session_state.saved_order_id = selected_order_id
+                            st.session_state.show_assignment_notif = True
                             st.rerun()
-                        
-                        if 'last_assigned_wa' in st.session_state:
-                            st.markdown("##### 📢 أرسل أمر التكليف الخارجي لهاتف الكابتن الميداني عبر:")
-                            c_col1, c_col2 = st.columns(2)
-                            with c_col1:
-                                st.markdown(f"<div class='whatsapp-btn'><a href='{st.session_state.last_assigned_wa}' target='_blank'>💬 إرسال عبر الواتساب</a></div>", unsafe_allow_html=True)
-                            with c_col2:
-                                st.markdown(f"<div class='sms-btn'><a href='{st.session_state.last_assigned_sms}'>✉️ إرسال عبر رسالة نصية SMS</a></div>", unsafe_allow_html=True)
                     else:
                         st.error("❌ لا يوجد كباتن مسجلين حالياً بالموقع، اذهب لتبويب إدارة المناديب أولاً لإضافتهم.")
                 else:
                     st.info("🟢 المنظومة نظيفة ومستقرة! لا توجد طلبات جديدة معلقة حالياً في المنظومة.")
+                
+                # إظهار أزرار الروابط النصية والواتساب بشكل ثابت ومستقر بعد التعميد فوراً ومباشرة
+                if st.session_state.show_assignment_notif:
+                    st.markdown("---")
+                    st.success(f"✅ تم تعميد الشحنة {st.session_state.saved_order_id} وإرسالها لصندوق بريد الكابتن {st.session_state.saved_drv_name} داخل واجهته بنجاح.")
+                    st.markdown("##### 📢 أرسل أمر التكليف الخارجي لهاتف الكابتن الميداني عبر الموبايل الآن:")
+                    c_col1, c_col2 = st.columns(2)
+                    with c_col1:
+                        st.markdown(f"<div class='whatsapp-btn'><a href='{st.session_state.saved_wa_url}' target='_blank'>💬 إرسال عبر الواتساب للمندوب</a></div>", unsafe_allow_html=True)
+                    with c_col2:
+                        st.markdown(f"<div class='sms-btn'><a href='{st.session_state.saved_sms_url}'>✉️ إرسال عبر رسالة نصية SMS</a></div>", unsafe_allow_html=True)
+                    
+                    if st.button("Clear 🧹 إخفاء خيارات هذا التكليف لمتابعة بقية الطلبات"):
+                        st.session_state.show_assignment_notif = False
+                        st.rerun()
 
-            # --- التبويب الثاني: كشف الطلبات المنجزة بالتفصيل (مرتبة ومنسقة جداً) ---
+            # --- التبويب الثاني: كشف الطلبات المنجزة بالتفصيل ---
             with manager_view_tab2:
                 st.markdown("#### ✅ الكشف والأرشيف الكامل لكافة الطلبات اليومية المنجزة والمصفاة ماليّاً:")
                 cursor.execute("SELECT * FROM orders WHERE status='تم التسليم ✅' ORDER BY rowid DESC")
@@ -682,22 +697,21 @@ elif st.session_state.current_role == "manager_portal":
                 
                 if completed_orders:
                     cursor.execute("SELECT id, name FROM drivers")
-                    drivers_names_map = {r[0]: r[1] for r in cursor.fetchall()}
+                    drivers_names_map = {r['id']: r['name'] for r in cursor.fetchall()}
                     
                     completed_orders_data = [{
-                        "رقم الشحنة": row[0],
-                        "وقت وتاريخ الطلب من الزبون": row[13],
-                        "وقت وتاريخ التسليم الفعلي": row[14],
-                        "الكابتن المنجز ميدانياً": drivers_names_map.get(row[8], row[8]),
-                        "اسم العميل": row[1],
-                        "هاتف العميل الموثق": row[2],
-                        "منطقة الاستلام": row[3],
-                        "منطقة التسليم النهائية": row[4],
-                        "آلية الدفع والتصفية": row[9],
-                        "المبلغ المصفى للخزنة": f"{row[7]:,} ريال"
+                        "رقم الشحنة": row['id'],
+                        "وقت وتاريخ الطلب من الزبون": row['order_time'],
+                        "وقت وتاريخ التسليم الفعلي": row['delivery_time'],
+                        "الكابتن المنجز ميدانياً": drivers_names_map.get(row['driver'], row['driver']),
+                        "اسم العميل": row['name'],
+                        "هاتف العميل الموثق": row['phone'],
+                        "منطقة الاستلام": row['from_loc'],
+                        "منطقة التسليم النهائية": row['to_loc'],
+                        "آلية الدفع والتصفية": row['payment_method'],
+                        "المبلغ المصفى للخزنة": f"{row['cost']:,} ريال"
                     } for row in completed_orders]
                     
-                    # عرض كشف حساب مالي وإنجازي فائق النقاء والتنظيم والترتيب
                     st.dataframe(completed_orders_data, use_container_width=True)
                 else:
                     st.info("ℹ️ لم يتم تصفية وتسليم أي طلبات في الميدان حتى هذه اللحظة.")
@@ -737,22 +751,22 @@ elif st.session_state.current_role == "manager_portal":
                         for drv_row in current_drivers_list:
                             st.markdown(f"""
                             <div class='card' style='border-right: 5px solid #16a34a;'>
-                            <b>🪪 كود المندوب:</b> {drv_row[0]} | <b>👤 الاسم:</b> {drv_row[1]}<br>
-                            <b>📞 رقم الهاتف الميداني:</b> {drv_row[2]} | <b>📍 نطاق التغطية:</b> {drv_row[3]}
+                            <b>🪪 كود المندوب:</b> {drv_row['id']} | <b>👤 الاسم:</b> {drv_row['name']}<br>
+                            <b>📞 رقم الهاتف الميداني:</b> {drv_row['phone']} | <b>📍 نطاق التغطية:</b> {drv_row['assigned_village']}
                             </div>
                             """, unsafe_allow_html=True)
                             
                             drv_edit_col1, drv_edit_col2 = st.columns(2)
                             with drv_edit_col1:
-                                new_village_edit = st.selectbox(f"تعديل تغطية {drv_row[1]}:", list(to_locations_db.keys()), index=list(to_locations_db.keys()).index(drv_row[3]) if drv_row[3] in to_locations_db else 0, key=f"edit_v_{drv_row[0]}")
-                                if st.button(f"⚙️ حفظ تعديل المنطقة لـ {drv_row[0]}", key=f"save_v_btn_{drv_row[0]}"):
-                                    cursor.execute("UPDATE drivers SET assigned_village=? WHERE id=?", (new_village_edit, drv_row[0]))
+                                new_village_edit = st.selectbox(f"تعديل تغطية {drv_row['name']}:", list(to_locations_db.keys()), index=list(to_locations_db.keys()).index(drv_row['assigned_village']) if drv_row['assigned_village'] in to_locations_db else 0, key=f"edit_v_{drv_row['id']}")
+                                if st.button(f"⚙️ حفظ تعديل المنطقة لـ {drv_row['id']}", key=f"save_v_btn_{drv_row['id']}"):
+                                    cursor.execute("UPDATE drivers SET assigned_village=? WHERE id=?", (new_village_edit, drv_row['id']))
                                     conn.commit()
                                     st.success("✅ تم تعديل نطاق التغطية بنجاح.")
                                     st.rerun()
                             with drv_edit_col2:
-                                if st.button(f"❌ حذف المندوب {drv_row[1]} نهائياً", key=f"del_drv_{drv_row[0]}"):
-                                    cursor.execute("DELETE FROM drivers WHERE id=?", (drv_row[0],))
+                                if st.button(f"❌ حذف المندوب {drv_row['name']} نهائياً", key=f"del_drv_{drv_row['id']}"):
+                                    cursor.execute("DELETE FROM drivers WHERE id=?", (drv_row['id'],))
                                     conn.commit()
                                     st.success("🗑️ تم حذف المندوب بنجاح من قاعدة البيانات.")
                                     st.rerun()
