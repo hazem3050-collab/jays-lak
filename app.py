@@ -470,7 +470,7 @@ elif st.session_state.current_role == "client_portal":
         st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# 🛵 ج: واجهة المندوب المستقلة وآمنة تماماً من أخطاء الـ sqlite3 الميدانية
+# 🛵 ج: واجهة المندوب المستقلة (تم إصلاح استعلام الـ SQL الميداني بالكامل هنا)
 # -------------------------------------------------------------------------
 elif st.session_state.current_role == "driver_portal":
     st.markdown("<h2 style='color:#1e293b;'>🛵 واجهة المندوب وكباتن الحركة الميدانية</h2>", unsafe_allow_html=True)
@@ -499,9 +499,10 @@ elif st.session_state.current_role == "driver_portal":
             if drv_auth and drv_auth['password'] == hash_password(driver_password_input):
                 drv_actual_name = drv_auth['name']
                 
+                # 🛠️ [تم الإصلاح] استعلام جلب التنبيه الميداني الأحدث دون أي تداخل نصوص
                 with get_db_connection() as conn:
                     cursor = conn.cursor()
-                    cursor.execute("SELECT * FROM orders WHERE driver=? AND status='جاري التوصيل' ORDER BY order_time DESC LIMIT 1")
+                    cursor.execute("SELECT * FROM orders WHERE driver=? AND status='جاري التوصيل' ORDER BY order_time DESC LIMIT 1", (active_driver_id,))
                     latest_mission = cursor.fetchone()
                 
                 if latest_mission:
@@ -512,9 +513,10 @@ elif st.session_state.current_role == "driver_portal":
                     </div>
                     """, unsafe_allow_html=True)
                 
+                # 🛠️ [تم الإصلاح] استعلام جلب كشف المهام النشطة بالكامل بطريقة صحيحة ومستقرة
                 with get_db_connection() as conn:
                     cursor = conn.cursor()
-                    cursor.execute("SELECT * FROM orders WHERE driver=? AND status='جاري التوصيل' ORDER BY order_time DESC")
+                    cursor.execute("SELECT * FROM orders WHERE driver=? AND status='جاري التوصيل' ORDER BY order_time DESC", (active_driver_id,))
                     driver_missions = cursor.fetchall()
                 
                 if driver_missions:
@@ -602,7 +604,7 @@ elif st.session_state.current_role == "manager_portal":
             
             st.markdown("<div class='card'>", unsafe_allow_html=True)
             m_col1, m_col2, m_col3 = st.columns(3)
-            m_col1.metric("إجمالي الطلبات تاريخياً", f"{len(all_orders_for_stats)} tobacco")
+            m_col1.metric("إجمالي الطلبات تاريخياً", f"{len(all_orders_for_stats)} طلب")
             m_col2.metric("طلبات معلقة جديدة", f"{pending_count} طلب")
             m_col3.metric("صافي الخزنة الميدانية", f"{delivered_revenue:,} ريال")
             st.markdown("</div>", unsafe_allow_html=True)
