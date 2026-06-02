@@ -102,21 +102,10 @@ def init_db():
         cursor.execute("SELECT value FROM settings WHERE key='admin_password'")
         if not cursor.fetchone():
             cursor.execute("INSERT INTO settings VALUES ('admin_password', ?)", (default_hashed,))
-        else:
-            cursor.execute("UPDATE settings SET value=? WHERE key='admin_password'", (default_hashed,))
             
-        # إضافة إعدادات رقم المدير الافتراضي لإشعارات الواتساب (يمكن تعديله من لوحة التحكم)
         cursor.execute("SELECT value FROM settings WHERE key='admin_whatsapp'")
         if not cursor.fetchone():
             cursor.execute("INSERT INTO settings VALUES ('admin_whatsapp', '770000000')")
-            
-        d_pass = hash_password("1234")
-        cursor.execute("SELECT COUNT(*) FROM drivers")
-        if cursor.fetchone()[0] == 0:
-            cursor.execute("INSERT INTO drivers VALUES ('DRV-101', 'كابتن علي اليماني', '771111111', 'مدينة كتاب', ?)", (d_pass,))
-            cursor.execute("INSERT INTO drivers VALUES ('DRV-102', 'كابتن محمد الحاشدي', '772222222', 'قرى الصفي', ?)", (d_pass,))
-        else:
-            cursor.execute("UPDATE drivers SET password=? WHERE id IN ('DRV-101', 'DRV-102')", (d_pass,))
             
         conn.commit()
     make_backup()
@@ -129,13 +118,6 @@ def check_admin_password(input_pwd):
         cursor.execute("SELECT value FROM settings WHERE key='admin_password'")
         saved_hash = cursor.fetchone()[0]
     return saved_hash == hash_password(input_pwd)
-
-def update_admin_password(new_pwd):
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        new_hash = hash_password(new_pwd)
-        cursor.execute("UPDATE settings SET value=? WHERE key='admin_password'", (new_hash,))
-        conn.commit()
 
 def get_admin_whatsapp():
     with get_db_connection() as conn:
@@ -150,7 +132,6 @@ def update_admin_whatsapp(new_phone):
         cursor.execute("UPDATE settings SET value=? WHERE key='admin_whatsapp'", (new_phone,))
         conn.commit()
 
-# دالة ذكية لتوليد رابط الإرسال المباشر للواتساب
 def send_whatsapp_notification(phone, message):
     if phone.startswith("0"):
         phone = phone[1:]
@@ -158,13 +139,6 @@ def send_whatsapp_notification(phone, message):
         phone = "967" + phone
     encoded_msg = urllib.parse.quote(message)
     return f"https://wa.me/{phone}?text={encoded_msg}"
-
-def play_sound_js(sound_url):
-    return f"""
-    <audio autoplay>
-        <source src="{sound_url}" type="audio/mp3">
-    </audio>
-    """
 
 # ==========================================
 # 🎨 واجهة وتصميم التطبيق والخلفية الميدانية باللون الأسود
@@ -233,7 +207,6 @@ st.markdown("""
     
     .voice-box { border: 2px dashed #16a34a; padding: 20px; background-color: rgba(240, 253, 244, 0.95); border-radius: 16px; margin-bottom: 15px; text-align: center; }
     .jeeb-panel { background-color: rgba(240, 253, 244, 0.95); border-right: 6px solid #0d9488; padding: 15px; border-radius: 8px; font-weight: bold; }
-    .success-panel { background-color: rgba(240, 253, 244, 0.95); border-right: 6px solid #16a34a; padding: 15px; border-radius: 8px; }
     .price-tag { background-color: rgba(239, 246, 255, 0.95); color: #1d4ed8 !important; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; font-size: 22px; border: 2px dashed #3b82f6; }
     .price-tag * { color: #1d4ed8 !important; }
     
@@ -301,7 +274,6 @@ with tab_client:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
         st.success(f"🎉 تم استلام طلبك بنجاح! كود تتبع شحنتك الميداني هو: {st.session_state.last_order_id}")
         
-        # رسالة منبثقة للعميل لتنبيه المدير فوراً خارج التطبيق
         admin_tel = get_admin_whatsapp()
         client_msg = f"🚨 تنبيه لإدارة جايا لك: قمت بإرسال طلبية جديدة في النظام برقم ({st.session_state.last_order_id})، يرجى مراجعتها وتعميد المندوب."
         wa_url = send_whatsapp_notification(admin_tel, client_msg)
@@ -409,7 +381,7 @@ with tab_track:
     if track_id:
         with get_db_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT name, from_loc, to_loc, status, driver, cost, phone FROM orders WHERE id=?", (track_id,))
+            cursor.execute("SELECT name, from_loc, to_loc, status, driver, cost FROM orders WHERE id=?", (track_id,))
             res = cursor.fetchone()
             
             if res:
@@ -480,13 +452,11 @@ with tab_driver:
                             if m[11] and os.path.exists(m[11]):
                                 st.audio(m[11])
                             
-                            # زر التحديث داخل النظام + إشعار الواتساب التلقائي للزبون خارج النظام
                             st.markdown("<div class='big-driver-btn'>", unsafe_allow_html=True)
                             if st.button(f"✅ تأكيد تسليم شحنة {m[0]} وتصفية المالي", key=f"drv_btn_{m[0]}"):
                                 cursor.execute("UPDATE orders SET status='تم التسليم ✅' WHERE id=?", (m[0],))
                                 conn.commit()
                                 
-                                # توليد رابط إشعار تسليم الشحنة للعميل على الواتساب خارج التطبيق
                                 cust_msg = f"🎉 عميلنا العزيز ({m[1]}): تم تسليم شحنتك الميدانية رقم ({m[0]}) وتصفية حساب التوصيل بنجاح بواسطة مندوب جايا لك. شكراً لك ونحن في خدمتك دائماً!"
                                 cust_wa_url = send_whatsapp_notification(m[2], cust_msg)
                                 
@@ -505,7 +475,7 @@ with tab_driver:
         st.info("ℹ️ لا يوجد مناديب مسجلين في النظام.")
 
 # -------------------------------------------------------------------------
-# 4. لوحة تحكم الإدارة
+# 4. لوحة تحكم الإدارة (تشمل لوحة المناديب المحدثة)
 # -------------------------------------------------------------------------
 with tab_manager:
     st.markdown("<div class='card'>", unsafe_allow_html=True)
@@ -521,6 +491,7 @@ with tab_manager:
         with get_db_connection() as conn:
             cursor = conn.cursor()
             
+            # ⚙️ الإعدادات العامة للمدير
             st.markdown("### ⚙️ إعدادات النظام الحيوية")
             curr_adm_wa = get_admin_whatsapp()
             new_adm_wa = st.text_input("رقم هاتف المدير لاستقبال إشعارات طلبات الزبائن (9 أرقام):", value=curr_adm_wa)
@@ -529,6 +500,71 @@ with tab_manager:
                 st.success("✅ تم تحديث وحفظ رقم الواتساب الخاص بالمدير بنجاح.")
             
             st.write("---")
+            
+            # 👥 ==========================================
+            # لوحة إدارة المناديب المحدثة (إضافة، تعديل، حذف)
+            # ==========================================
+            st.markdown("### 🛵 لوحة التحكم في المناديب وكباتن الحركة")
+            
+            m_drv_tab1, m_drv_tab2 = st.tabs(["➕ إضافة مندوب جديد", "📋 إدارة وتعديل الكباتن الحاليين"])
+            
+            with m_drv_tab1:
+                st.markdown("<div class='card'>", unsafe_allow_html=True)
+                new_d_id = st.text_input("كود المعرف للمندوب (مثال: DRV-103):").strip()
+                new_d_name = st.text_input("اسم الكابتن الكامل:").strip()
+                new_d_phone = st.text_input("رقم هاتف المندوب (9 أرقام):", max_chars=9).strip()
+                new_d_village = st.selectbox("منطقة أو قرية التغطية الرئيسية للتسليم:", list(to_locations_db.keys()), key="new_d_village")
+                new_d_pass = st.text_input("تعيين كلمة السر الخاصة بالدخول للمندوب:", type="password", value="1234")
+                
+                if st.button("✨ تسجيل واعتماد المندوب في النظام"):
+                    if not new_d_id or not new_d_name or not new_d_phone.isdigit() or len(new_d_phone) < 9:
+                        st.error("❌ يرجى تعبئة جميع حقول المندوب ورقم الهاتف بشكل صحيح المكون من 9 أرقام.")
+                    else:
+                        cursor.execute("SELECT id FROM drivers WHERE id=?", (new_d_id,))
+                        if cursor.fetchone():
+                            st.error("❌ كود معرف المندوب هذا مسجل مسبقاً لمندوب آخر.")
+                        else:
+                            hashed_drv_pwd = hash_password(new_d_pass)
+                            cursor.execute("INSERT INTO drivers VALUES (?, ?, ?, ?, ?)", (new_d_id, new_d_name, new_d_phone, new_d_village, hashed_drv_pwd))
+                            conn.commit()
+                            st.success(f"🎉 تم تسجيل المندوب {new_d_name} بنجاح!")
+                            st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
+                
+            with m_drv_tab2:
+                cursor.execute("SELECT * FROM drivers")
+                current_drivers_list = cursor.fetchall()
+                if current_drivers_list:
+                    for drv_row in current_drivers_list:
+                        st.markdown(f"""
+                        <div class='card' style='border-right: 5px solid #16a34a;'>
+                        <b>🪪 كود المندوب:</b> {drv_row[0]} | <b>👤 الاسم:</b> {drv_row[1]}<br>
+                        <b>📞 رقم الهاتف الميداني:</b> {drv_row[2]} | <b>📍 نطاق التغطية:</b> {drv_row[3]}
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # أزرار التعديل والحذف الفرعية لكل كابتن
+                        drv_edit_col1, drv_edit_col2 = st.columns(2)
+                        with drv_edit_col1:
+                            new_village_edit = st.selectbox(f"تعديل تغطية {drv_row[1]}:", list(to_locations_db.keys()), index=list(to_locations_db.keys()).index(drv_row[3]) if drv_row[3] in to_locations_db else 0, key=f"edit_v_{drv_row[0]}")
+                            if st.button(f"⚙️ حفظ تعديل المنطقة لـ {drv_row[0]}", key=f"save_v_btn_{drv_row[0]}"):
+                                cursor.execute("UPDATE drivers SET assigned_village=? WHERE id=?", (new_village_edit, drv_row[0]))
+                                conn.commit()
+                                st.success("✅ تم تعديل نطاق التغطية بنجاح.")
+                                st.rerun()
+                        with drv_edit_col2:
+                            if st.button(f"❌ حذف المندوب {drv_row[1]} نهائياً", key=f"del_drv_{drv_row[0]}"):
+                                cursor.execute("DELETE FROM drivers WHERE id=?", (drv_row[0],))
+                                conn.commit()
+                                st.success("🗑️ تم حذف المندوب بنجاح من قاعدة البيانات.")
+                                st.rerun()
+                else:
+                    st.info("ℹ️ لا يوجد مناديب مسجلين لتعديلهم حالياً.")
+            
+            st.write("---")
+            
+            # 🎮 وحدة التوجيه والإسناد الفوري للمناديب عبر الواتساب
+            st.markdown("### 🎮 وحدة التوجيه والإسناد الفوري للمناديب عبر الواتساب")
             cursor.execute("SELECT * FROM orders")
             order_rows = cursor.fetchall()
             cursor.execute("SELECT * FROM drivers")
@@ -557,8 +593,6 @@ with tab_manager:
             m_col3.metric("صافي الخزنة الميدانية", f"{delivered_revenue:,} ريال")
             st.markdown("</div>", unsafe_allow_html=True)
             
-            st.write("---")
-            st.markdown("#### 🎮 وحدة التوجيه والإسناد الفوري للمناديب عبر الواتساب")
             assignable_orders = [o["رقم الشحنة"] for o in orders_db if o["الحالة"] == "بانتظار الموافقة"]
             
             if assignable_orders:
@@ -576,7 +610,6 @@ with tab_manager:
                     cursor.execute("UPDATE orders SET status='جاري التوصيل', driver=? WHERE id=?", (selected_driver_id, selected_order_id))
                     conn.commit()
                     
-                    # جلب بيانات هاتف المندوب المختار لإرسال رسالة التكليف له على الواتساب
                     cursor.execute("SELECT name, phone FROM drivers WHERE id=?", (selected_driver_id,))
                     drv_data_selected = cursor.fetchone()
                     
