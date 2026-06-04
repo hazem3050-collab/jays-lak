@@ -25,7 +25,7 @@ def init_db():
     conn = sqlite3.connect('jaya_lak.db')
     cursor = conn.cursor()
     
-    # إنشاء جدول الطلبات بكافة الحقول المطلوبة للميدان
+    # جدول الطلبات بكامل تفاصيله الميدانية الأصلية
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,19 +40,35 @@ def init_db():
             order_date TEXT NOT NULL,
             delivery_price REAL DEFAULT 0.0,
             closing_date TEXT,
-            admin_notes TEXT
+            admin_notes TEXT,
+            payment_status TEXT DEFAULT 'غير مدفوع',
+            rating INTEGER DEFAULT 0
         )
     ''')
     
-    # إنشاء جدول حسابات كباتن التوصيل والمناديب
+    # جدول حسابات كباتن التوصيل والمناديب وتفاصيل المحافظ
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS drivers (
             username TEXT PRIMARY KEY,
             password TEXT NOT NULL,
             full_name TEXT NOT NULL,
+            phone TEXT,
             wallet REAL DEFAULT 0.0,
+            commission_due REAL DEFAULT 0.0,
             registration_date TEXT,
             is_active INTEGER DEFAULT 1
+        )
+    ''')
+    
+    # جدول العمليات المالية اليومية للأرباح والمحاسبة
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS financial_transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            driver_name TEXT,
+            amount REAL,
+            transaction_type TEXT,
+            description TEXT,
+            date TEXT
         )
     ''')
     
@@ -67,7 +83,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-# تشغيل دالة التهيئة فوراً عند إقلاع التطبيق
 init_db()
 
 # ==========================================
@@ -89,11 +104,11 @@ st.markdown("""
         height: 90px !important;
         font-size: 26px !important;
         font-weight: bold !important;
-        background-color: #EA384D !important; /* الأحمر الزاهي الخاص بهوية جايا لك السريعة */
+        background-color: #EA384D !important; /* الأحمر الزاهي الخاص بهوية جايا لك السريعة ومحفظتها */
         color: white !important;
         border-radius: 20px !important;
         margin-bottom: 22px !important;
-        border: 2.5px solid #000000 !important; /* الأسود لضمان الوضوح الكامل تحت أشعة الشمس */
+        border: 2.5px solid #000000 !important; /* الأسود الملكي لضمان الوضوح الكامل تحت أشعة الشمس */
         box-shadow: 0px 5px 12px rgba(0,0,0,0.18) !important;
         transition: transform 0.2s ease-in-out;
     }
@@ -124,7 +139,7 @@ st.markdown("""
         box-shadow: 0px 3px 10px rgba(0,0,0,0.08);
     }
     
-    /* محاذاة العناوين والنصوص لتبدو كتطبيق احترافي موجه للشرق الأوسط */
+    /* محاذاة العناوين والنصوص لتبدو كتطبيق احترافي */
     h1, h2, h3, h4 {
         text-align: center;
         color: #111827;
@@ -142,9 +157,7 @@ st.markdown("<h1>📦 تطبيق جايا لك للتوصيل الذكي</h1>", 
 st.markdown("<p style='text-align:center; font-weight:bold; color:#4B5563; font-size:18px;'>النظام التجاري الموحد لخدمة مركز كِتاب والقرى المجاورة</p>", unsafe_allow_html=True)
 st.write("---")
 
-# ==========================================
-# 4. نظام إدارة جلسات الحفظ والتنقل الداخلي
-# ==========================================
+# إدارة جلسات الحفظ والتنقل الداخلي
 if 'page' not in st.session_state:
     st.session_state.page = 'main'
 if 'logged_user' not in st.session_state:
@@ -153,14 +166,13 @@ if 'user_role' not in st.session_state:
     st.session_state.user_role = None
 
 # ==========================================
-# 5. الواجهة الرئيسية (قائمة البوابات الثلاثة)
+# 5. الواجهة الرئيسية (قائمة البوابات الثلاثة المحدثة)
 # ==========================================
 if st.session_state.page == 'main':
     st.write("### 🏪 يرجى اختيار بوابة الدخول للبدء:")
     st.write("")
     
     st.markdown('<div class="big-button">', unsafe_allow_html=True)
-    
     if st.button("🙋‍♂️ بوابة طلبات الزبائن (طلب جديد مباشر)", key="main_client_btn", use_container_width=True):
         st.session_state.page = 'client_portal'
         st.rerun()
@@ -172,11 +184,10 @@ if st.session_state.page == 'main':
     if st.button("📊 لوحة التحكم والإشراف العام (المدير)", key="main_admin_btn", use_container_width=True):
         st.session_state.page = 'admin_login_portal'
         st.rerun()
-        
     st.markdown('</div>', unsafe_allow_html=True)
 
 # ==========================================
-# 6. بوابة طلبات الزبائن (واجهة الاستقبال)
+# 6. بوابة طلبات الزبائن الكاملة
 # ==========================================
 elif st.session_state.page == 'client_portal':
     st.subheader("🙋‍♂️ استمارة تسجيل طلب توصيل جديد")
@@ -209,7 +220,6 @@ elif st.session_state.page == 'client_portal':
             if client_name.strip() != "" and phone_number.strip() != "" and to_loc.strip() != "":
                 saved_voice_path = None
                 
-                # معالجة وحفظ الملف الصوتي المرفق بداخل النظام لضمان عدم فقدانه
                 if uploaded_voice is not None:
                     if not os.path.exists('saved_voices'):
                         os.makedirs('saved_voices')
@@ -218,7 +228,6 @@ elif st.session_state.page == 'client_portal':
                     with open(saved_voice_path, "wb") as f:
                         f.write(uploaded_voice.getbuffer())
                 
-                # حفظ الطلب في قاعدة البيانات بشكل تجاري كامل
                 conn = sqlite3.connect('jaya_lak.db')
                 cursor = conn.cursor()
                 cursor.execute('''
@@ -227,13 +236,12 @@ elif st.session_state.page == 'client_portal':
                 ''', (client_name, phone_number, from_loc, to_loc, order_text, saved_voice_path, 'قيد الانتظار', '', datetime.now().strftime('%Y-%m-%d %H:%M')))
                 conn.commit()
                 conn.close()
-                
                 st.success("🎉 تم إرسال وتأكيد طلبك بنجاح! سيقوم كباتن جايا لك في مركز كِتاب بمراجعة الطلب والتحرك لتسليمه فوراً.")
             else:
                 st.error("⚠️ خطأ في الإرسال: يرجى التأكد من كتابة الاسم، رقم الهاتف، وعنوان التوصيل لضمان توجيه الكابتن إليك.")
 
 # ==========================================
-# 7. بوابة تسجيل دخول المناديب (كباتن التوصيل)
+# 7. بوابة تسجيل دخول المناديب
 # ==========================================
 elif st.session_state.page == 'driver_login_portal':
     st.subheader("🚗 تسجيل دخول كباتن التوصيل المعتمدين")
@@ -266,7 +274,7 @@ elif st.session_state.page == 'driver_login_portal':
             st.warning("يرجى ملء جميع الخانات المخصصة للدخول.")
 
 # ==========================================
-# 8. لوحة تحكم المندوب الكاملة (إدارة الأرباح والطلبات)
+# 8. لوحة تحكم المندوب الكاملة والأصلية
 # ==========================================
 elif st.session_state.page == 'driver_dashboard_portal' and st.session_state.user_role == 'driver':
     st.subheader(f"🚗 لوحة العمل الميداني للكابتن: {st.session_state.logged_user}")
@@ -282,14 +290,19 @@ elif st.session_state.page == 'driver_dashboard_portal' and st.session_state.use
     conn = sqlite3.connect('jaya_lak.db')
     cursor = conn.cursor()
     
-    # عرض محفظة المندوب المالية لمراقبة أرباح التوصيل بشكل حي ومباشر
-    cursor.execute("SELECT wallet, full_name FROM drivers WHERE username=?", (st.session_state.logged_user,))
+    cursor.execute("SELECT wallet, commission_due, full_name FROM drivers WHERE username=?", (st.session_state.logged_user,))
     driver_data = cursor.fetchone()
     current_wallet = driver_data[0] if driver_data else 0.0
-    full_driver_name = driver_data[1] if driver_data else st.session_state.logged_user
+    current_commission = driver_data[1] if driver_data else 0.0
+    full_driver_name = driver_data[2] if driver_data else st.session_state.logged_user
     
     st.success(f"مرحباً بك يا كابتن {full_driver_name}")
-    st.metric(label="💰 إجمالي أرباحك الحالية المسجلة في محفظة جايا لك:", value=f"{current_wallet} ريال")
+    
+    col_w1, col_w2 = st.columns(2)
+    with col_w1:
+        st.metric(label="💰 إجمالي صافي أرباحك في المحفظة:", value=f"{current_wallet} ريال")
+    with col_w2:
+        st.metric(label="📉 مستحقات ونسبة التطبيق الواجب دفعها:", value=f"{current_commission} ريال")
     
     st.write("### 📌 الطلبات الجديدة المعلقة حالياً في كِتاب:")
     cursor.execute("SELECT * FROM orders WHERE status='قيد الانتظار' ORDER BY id DESC")
@@ -300,17 +313,15 @@ elif st.session_state.page == 'driver_dashboard_portal' and st.session_state.use
     else:
         for order in available_orders:
             with st.expander(f"📦 طلب توصيل جديد للزبون: {order[1]} 📍 الوجهة: {order[4]}"):
-                st.write(f"**نقطة الاستلام والثبات:** {order[3]}")
+                st.write(f"**نقطة الاستلام وثبات الشحن:** {order[3]}")
                 st.write(f"**نقطة التوصيل الميداني:** {order[4]}")
                 st.write(f"**قائمة السلع والطلبات المكتوبة:** {order[5] if order[5] else 'لا توجد تفاصيل نصية (اكتفى بالصوت)'}")
                 
-                # تشغيل الصوت المرفق إن وجد
                 if order[6]:
                     st.write("🎵 **الملاحظة الصوتية المرفقة من الزبون:**")
                     st.audio(order[6])
                 
                 st.write("---")
-                # تحديد أجرة التوصيل المباشرة للقرية المستهدفة
                 driver_price_input = st.number_input(
                     f"حدد تكلفة وأجرة التوصيل للطلب رقم #{order[0]} (بالريال):", 
                     min_value=0.0, 
@@ -347,11 +358,21 @@ elif st.session_state.page == 'driver_dashboard_portal' and st.session_state.use
                 st.write(f"**تاريخ الاستلام:** {active_order[9]}")
                 
                 if st.button(f"🏁 تأكيد إتمام تسليم الطلب وقبض المبلغ رقم #{active_order[0]}", key=f"close_btn_{active_order[0]}"):
-                    # تحديث حالة الطلب وإرسال الأرباح المباشرة للمحفظة الإلكترونية للكابتن
+                    # حساب نسبة التطبيق (مثال: 10% ونقل الباقي لصافي المحفظة)
+                    app_commission = active_order[10] * 0.10
+                    driver_net = active_order[10] - app_commission
+                    
                     cursor.execute("UPDATE orders SET status='تم التسليم', closing_date=? WHERE id=?", (datetime.now().strftime('%Y-%m-%d %H:%M'), active_order[0]))
-                    cursor.execute("UPDATE drivers SET wallet = wallet + ? WHERE username=?", (active_order[10], st.session_state.logged_user))
+                    cursor.execute("UPDATE drivers SET wallet = wallet + ?, commission_due = commission_due + ? WHERE username=?", (driver_net, app_commission, st.session_state.logged_user))
+                    
+                    # تسجيل حركة محاسبية كاملة لضمان جرد الدفاتر والأرباح
+                    cursor.execute('''
+                        INSERT INTO financial_transactions (driver_name, amount, transaction_type, description, date)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (st.session_state.logged_user, active_order[10], 'دخل توصيل كامل', f"إتمام الطلب رقم #{active_order[0]}", datetime.now().strftime('%Y-%m-%d %H:%M')))
+                    
                     conn.commit()
-                    st.success("كفو يا كابتن! تم إغلاق الطلب بنجاح وإضافة المستحقات المالية لمحفظتك الحالية.")
+                    st.success("كفو يا كابتن! تم إغلاق الطلب بنجاح وتوزيع الأرباح وحساب نسبة النظام تلقائياً.")
                     st.rerun()
                     
     conn.close()
@@ -372,7 +393,7 @@ elif st.session_state.page == 'admin_login_portal':
     a_password = st.text_input("كلمة مرور الإدارة السرية:", type="password")
     
     if st.button("🔒 تسجيل الدخول للوحة التحكم"):
-        if a_username == 'admin' and hash_password(a_password) == hash_password('admin123'): # كلمة المرور الافتراضية المعتمدة لحسابك
+        if a_username == 'admin' and hash_password(a_password) == hash_password('admin123'): 
             st.session_state.logged_user = 'admin'
             st.session_state.user_role = 'admin'
             st.session_state.page = 'admin_dashboard_portal'
@@ -381,7 +402,7 @@ elif st.session_state.page == 'admin_login_portal':
             st.error("❌ خطأ: اسم المستخدم أو كلمة المرور الخاصة بالإدارة غير صحيحة.")
 
 # ==========================================
-# 10. لوحة تحكم الإدارة الشاملة (المدير العام)
+# 10. لوحة تحكم الإدارة الشاملة والأصلية (المدير العام)
 # ==========================================
 elif st.session_state.page == 'admin_dashboard_portal' and st.session_state.user_role == 'admin':
     st.subheader("📊 لوحة الإشراف المباشر والتحكم العام بالنظام")
@@ -397,7 +418,7 @@ elif st.session_state.page == 'admin_dashboard_portal' and st.session_state.user
     conn = sqlite3.connect('jaya_lak.db')
     cursor = conn.cursor()
     
-    # التعديل التجاري المعتمد: عرض كافة تفاصيل طلبات الزبائن الجديدة بالتفصيل الكامل للمدير
+    # تفاصيل طلبات الزبائن الجديدة بالتفصيل الكامل للمدير
     st.write("### 🔴 تفاصيل طلبات الزبائن الجديدة الواردة الآن:")
     cursor.execute("SELECT * FROM orders WHERE status='قيد الانتظار' ORDER BY id DESC")
     current_new_orders = cursor.fetchall()
@@ -406,7 +427,6 @@ elif st.session_state.page == 'admin_dashboard_portal' and st.session_state.user
         st.info("لا توجد طلبات جديدة معلقة من قبل الزبائن في النظام حالياً.")
     else:
         for order in current_new_orders:
-            # بناء كرت كامل وتفصيلي وبألوان تبرز البيانات للمالك لمنع الفقدان
             st.markdown(f"""
             <div class="admin-card">
                 <h4 style="margin: 0; color: #EA384D; text-align: right;">📦 طلب معلق جديد رقم #{order[0]}</h4>
@@ -418,7 +438,6 @@ elif st.session_state.page == 'admin_dashboard_portal' and st.session_state.user
             </div>
             """, unsafe_allow_html=True)
             
-            # تشغيل الصوت المرفق بالطلب أسفل الكرت مباشرة لسهولة المتابعة من المالك
             if order[6]:
                 st.write("🎵 **الملاحظة الصوتية للطلب:**")
                 st.audio(order[6])
@@ -430,20 +449,21 @@ elif st.session_state.page == 'admin_dashboard_portal' and st.session_state.user
                 st.rerun()
             st.write("---")
 
-    # نظام إدارة وتسجيل كباتن التوصيل الجدد وتوزيع الصلاحيات الميدانية
+    # نظام إدارة طاقم المناديب والتحقق الكامل
     st.write("### 👥 إدارة وأرشفة طاقم المناديب (إضافة كابتن جديد):")
     with st.expander("اضغط هنا لفتح استمارة تسجيل مندوب جديد للفريق"):
         reg_username = st.text_input("اسم مستخدم الحساب الجديد (بالأحرف الإنجليزية فقط وبدون مسافات):")
         reg_full_name = st.text_input("الاسم الكامل والرباعي للكابتن الجديد:")
+        reg_phone = st.text_input("رقم هاتف الكابتن:")
         reg_password = st.text_input("تعيين كلمة مرور الحساب الميداني:", type="password")
         
         if st.button("📋 اعتماد وحفظ الكابتن في النظام"):
             if reg_username.strip() != "" and reg_full_name.strip() != "" and reg_password.strip() != "":
                 try:
                     cursor.execute('''
-                        INSERT INTO drivers (username, password, full_name, wallet, registration_date, is_active)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (reg_username.strip(), hash_password(reg_password), reg_full_name.strip(), 0.0, datetime.now().strftime('%Y-%m-%d'), 1))
+                        INSERT INTO drivers (username, password, full_name, phone, wallet, commission_due, registration_date, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (reg_username.strip(), hash_password(reg_password), reg_full_name.strip(), reg_phone, 0.0, 0.0, datetime.now().strftime('%Y-%m-%d'), 1))
                     conn.commit()
                     st.success(f"🎉 تم تسجيل واعتماد المندوب الجديد [{reg_full_name}] في نظام جايا لك بنجاح!")
                 except sqlite3.IntegrityError:
@@ -451,10 +471,59 @@ elif st.session_state.page == 'admin_dashboard_portal' and st.session_state.user
             else:
                 st.error("يرجى ملء جميع الخانات المطلوبة لإتمام عملية تسجيل الحساب الميداني.")
 
+    # لوحة المحاسبة الكاملة وتصفية الحسابات والعمولات
+    st.write("---")
+    st.write("### 💵 النظام المالي ومحاسبة عمولات المناديب اليومية:")
+    cursor.execute("SELECT username, full_name, wallet, commission_due FROM drivers WHERE username != 'admin'")
+    all_drivers_finance = cursor.fetchall()
+    
+    if all_drivers_finance:
+        for dr_f in all_drivers_finance:
+            st.markdown(f"**👤 الكابتن: {dr_f[1]} ({dr_f[0]})**")
+            st.write(f"صافي محفظته: {dr_f[2]} ريال | العمولات المستحقة للتطبيق عليه: {dr_f[3]} ريال")
+            
+            # زر تصفية حساب الكابتن واستلام عمولة المحل منه كاش في الميدان
+            settle_amount = st.number_input(f"المبلغ المقبوض كاش لتسوية عمولة الكابتن {dr_f[0]} (ريال):", min_value=0.0, max_value=float(dr_f[3]), step=50.0, key=f"settle_{dr_f[0]}")
+            if st.button(f"🏁 تأكيد استلام عمولة كاش من الكابتن {dr_f[0]}", key=f"btn_settle_{dr_f[0]}"):
+                if settle_amount > 0:
+                    cursor.execute("UPDATE drivers SET commission_due = commission_due - ? WHERE username=?", (settle_amount, dr_f[0]))
+                    cursor.execute('''
+                        INSERT INTO financial_transactions (driver_name, amount, transaction_type, description, date)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (dr_f[0], settle_amount, 'تسوية عمولة مقبوضة', 'تم استلام وتصفية مستحقات التطبيق كاش', datetime.now().strftime('%Y-%m-%d %H:%M')))
+                    conn.commit()
+                    st.success(f"تم تصفية وحسم مبلغ {settle_amount} ريال من حساب الكابتن بنجاح وثبتت الأوراق الممالية!")
+                    st.rerun()
+            st.write("---")
+
+    # حركة السجلات والأرشيف التاريخي لجميع عمليات التسليم القديمة والطلبات النشطة
+    st.write("### 📜 الأرشيف التاريخي وسجلات الحركة الميدانية بالكامل:")
+    order_filter = st.selectbox("تصفية وعرض السجلات بحسب الحالة الميدانية:", ["الكل", "تم التسليم", "جاري التوصيل", "قيد الانتظار"])
+    
+    if order_filter == "الكل":
+        cursor.execute("SELECT * FROM orders ORDER BY id DESC")
+    else:
+        cursor.execute("SELECT * FROM orders WHERE status=? ORDER BY id DESC", (order_filter,))
+    
+    all_history_orders = cursor.fetchall()
+    if all_history_orders:
+        for h_order in all_history_orders:
+            with st.expander(f"طلب #{h_order[0]} — للزبون {h_order[1]} [{h_order[7]}]"):
+                st.write(f"**الهاتف:** {h_order[2]}")
+                st.write(f"**مسار التوصيل:** من {h_order[3]} إلى {h_order[4]}")
+                st.write(f"**التفاصيل:** {h_order[5]}")
+                st.write(f"**حالة الطلب الحالية بالنظام:** `{h_order[7]}`")
+                st.write(f"**أجرة التوصيل المسجلة:** {h_order[10]} ريال")
+                st.write(f"**الكابتن المسؤول:** {h_order[8] if h_order[8] else 'لم يستلم أحد بعد'}")
+                st.write(f"**تاريخ المتابعة والإطلاق:** {h_order[9]}")
+                if h_order[11]:
+                    st.write(f"**تاريخ ووقت الإغلاق الفعلي:** {h_order[11]}")
+    else:
+        st.info("سجل الأرشيف فارغ حالياً لهذه الحالة.")
+
     # الإحصائيات الشاملة والتقارير المالية لحركة المحل والتوصيل
     st.write("---")
-    st.write("### 📈 إحصائيات وتقارير أداء التطبيق العام:")
-    
+    st.write("### 📈 إحصائيات وتقارير أداء التطبيق العام لمالك المشروع:")
     cursor.execute("SELECT COUNT(*), status FROM orders GROUP BY status")
     application_stats = cursor.fetchall()
     
@@ -465,18 +534,8 @@ elif st.session_state.page == 'admin_dashboard_portal' and st.session_state.user
         st.metric(label="🚚 طلبات جاري توصيلها", value=next((x[0] for x in application_stats if x[1] == 'جاري التوصيل'), 0))
     with col3:
         st.metric(label="🏁 طلبات تم تسليمها بنجاح", value=next((x[0] for x in application_stats if x[1] == 'تم التسليم'), 0))
-
-    st.write("### 💳 كشف حسابات ومستحقات محافظ المناديب الحالية:")
-    cursor.execute("SELECT username, full_name, wallet FROM drivers WHERE username != 'admin'")
-    all_active_drivers = cursor.fetchall()
-    
-    if not all_active_drivers:
-        st.info("لا يوجد مناديب مسجلين في النظام حالياً.")
-    else:
-        for driver in all_active_drivers:
-            st.write(f" الكابتن الميداني: **{driver[1]}** ({driver[0]}) — إجمالي مستحقاته وأرباحه بالتطبيق: **{driver[2]} ريال**")
-            
+        
     conn.close()
 # ==========================================
-# نهاية الكود البرمجي التجاري لملف جايا لك
+# نهاية الكود البرمجي التجاري العملاق لملف جايا لك
 # ==========================================
