@@ -219,10 +219,10 @@ st.markdown("""
     /* 🚨 تضخيم وإجبار أزرار البوابة الرئيسية الثلاثة لتصبح عملاقة جداً */
     div[data-testid="stMain"] div.stButton > button {
         width: 100% !important;
-        height: 85px !important;
-        font-size: 22px !important;
-        font-weight: 800 !important;
-        border-radius: 18px !important;
+        height: 120px !important;
+        font-size: 30px !important;
+        font-weight: 900 !important;
+        border-radius: 22px !important;
         border: 2px solid #000000 !important;
         box-shadow: 0 8px 16px rgba(0,0,0,0.2) !important;
         margin-bottom: 15px !important;
@@ -242,8 +242,8 @@ st.markdown("""
     div.big-confirm-btn div.stButton > button {
         background-color: #16a34a !important;
         color: #ffffff !important;
-        height: 95px !important;
-        font-size: 25px !important;
+        height: 130px !important;
+        font-size: 34px !important;
         font-weight: 900 !important;
         border: 3px solid #0f766e !important;
         box-shadow: 0 10px 20px rgba(22, 163, 74, 0.4) !important;
@@ -645,18 +645,17 @@ elif st.session_state.current_role == "manager_portal":
                 
                 if new_orders:
                     # 🚀 تم تجميع وإبراز كافة تفاصيل الزبون الجديد مباشرة وبشكل مقروء جداً للمدير هنا
-                    new_orders_data = [{
-                        "رقم الشحنة": row['id'],
-                        "وقت وصول الطلب": row['order_time'],
-                        "اسم العميل": row['name'],
-                        "رقم الهاتف": row['phone'],
-                        "نقطة الاستلام": row['from_loc'],
-                        "قرية التوصيل": row['to_loc'],
-                        "نوع وحجم الشحنة": row['type'],
-                        "طريقة السداد": row['payment_method'],
-                        "ملاحظات وتفاصيل طلب الزبون": row['notes'] if row['notes'] else "لا يوجد ملاحظات مكتوبة",
-                        "قيمة التوصيل الميداني": f"{row['cost']:,} ريال"
-                    } for row in new_orders]
+                     new_orders_data = [{
+                    "رقم الشحنة": row['id'],
+                    "اسم العميل": row['name'],
+                    "رقم الهاتف": row['phone'],
+                    "منطقة التوصيل": row['to_loc'],
+                    "نوع الطلب": row['type'],
+                    "طريقة الدفع": row['payment_method'],
+                    "تفاصيل الطلب": row['notes'],
+                    "القيمة": row['cost']
+                     }
+                    for row in new_orders]
                     st.dataframe(new_orders_data, use_container_width=True)
                     
                     st.markdown("#### 🎮 وحدة التوجيه والإسناد السريع للمناديب:")
