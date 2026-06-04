@@ -326,16 +326,16 @@ if st.session_state.current_role == "main_gate":
     st.markdown("<p style='text-align: center; font-size: 16px;'>يرجى اختيار هويتك للدخول إلى الواجهة المخصصة لك:</p>", unsafe_allow_html=True)
     
     st.markdown("<div class='client-main-btn'>", unsafe_allow_html=True)
-    if st.button("👤 أنا عميل (أريد إرسال طلب جديد)"):
+    if st.button("👤 أنا عميل (أريد إرسال طلب أو تتبع شحنة)"):
         st.session_state.current_role = "client_portal"
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
     
-    if st.button("🛵 أنا مندوب  (توصيل ميداني)"):
+    if st.button("🛵 أنا مندوب كابتن حركة (توصيل ميداني)"):
         st.session_state.current_role = "driver_portal"
         st.rerun()
     
-    if st.button("💼  الإدارة والمدير المركزي"):
+    if st.button("💼 لوحة تحكم الإدارة والمدير المركزي"):
         st.session_state.current_role = "manager_portal"
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
@@ -400,7 +400,7 @@ elif st.session_state.current_role == "client_portal":
             
             st.markdown("<div class='card'>", unsafe_allow_html=True)
             st.markdown("<h3>✏️ حجم وتفاصيل الشحنة</h3>", unsafe_allow_html=True)
-            user_notes = st.text_area("إذا تريد كتابة ملاحظة إضافية للمندوب اكتبها هنا:", placeholder="مثال: كرتون صلصة، بهارات، كيس دقيق اي شي...")
+            user_notes = st.text_area("إذا تريد كتابة ملاحظة إضافية للمندوب اكتبها هنا:", placeholder="مثال: كرتون صلصة، بهارات، كيس دقيق...")
             weight_opt = st.selectbox("اختر ثقل وحجم شحنتك الميدانية لتحديد السعر الاقتصادية لها:", ["📦 خفيفة", "📦 متوسطة", "📦 ثقيلة"])
             image_file = st.file_uploader("صورة الفاتورة أو الطلب (اختياري):", type=["jpg", "png", "jpeg"])
             st.markdown("</div>", unsafe_allow_html=True)
@@ -645,17 +645,18 @@ elif st.session_state.current_role == "manager_portal":
                 
                 if new_orders:
                     # 🚀 تم تجميع وإبراز كافة تفاصيل الزبون الجديد مباشرة وبشكل مقروء جداً للمدير هنا
-                     new_orders_data = [{
-                    "رقم الشحنة": row['id'],
-                    "اسم العميل": row['name'],
-                    "رقم الهاتف": row['phone'],
-                    "منطقة التوصيل": row['to_loc'],
-                    "نوع الطلب": row['type'],
-                    "طريقة الدفع": row['payment_method'],
-                    "تفاصيل الطلب": row['notes'],
-                    "القيمة": row['cost']
-                     }
-                 for row in new_orders]
+                    new_orders_data = [{
+                        "رقم الشحنة": row['id'],
+                        "وقت وصول الطلب": row['order_time'],
+                        "اسم العميل": row['name'],
+                        "رقم الهاتف": row['phone'],
+                        "نقطة الاستلام": row['from_loc'],
+                        "قرية التوصيل": row['to_loc'],
+                        "نوع وحجم الشحنة": row['type'],
+                        "طريقة السداد": row['payment_method'],
+                        "ملاحظات وتفاصيل طلب الزبون": row['notes'] if row['notes'] else "لا يوجد ملاحظات مكتوبة",
+                        "قيمة التوصيل الميداني": f"{row['cost']:,} ريال"
+                    } for row in new_orders]
                     st.dataframe(new_orders_data, use_container_width=True)
                     
                     st.markdown("#### 🎮 وحدة التوجيه والإسناد السريع للمناديب:")
