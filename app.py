@@ -4,16 +4,25 @@ import random
 import os
 import hashlib
 import urllib.parse
+import shutil
 from datetime import datetime
 
 # ==========================================
-# 🛑 رفع حد رفع الملفات والصوت إلى 200 ميجابايت مع الحماية
+# 🛑 رفع حد رفع الملفات والصوت (يجب أن يكون في البداية)
 # ==========================================
 st.config.set_option("server.maxUploadSize", 200)
 
 # ==========================================
-# 📂 المجلدات المخصصة لحفظ الصور والأصوات والنسخ الاحتياطي
+# 🎨 واجهة وتصميم التطبيق والخلفية الاحترافية
 # ==========================================
+st.set_page_config(
+    page_title="مؤسسة جايا لك للتوصيل الذكي",
+    page_icon="📦",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
+
+# 📂 المجلدات المخصصة لحفظ الصور والأصوات والنسخ الاحتياطي
 VOICE_DIR = "saved_voices"
 IMAGE_DIR = "saved_images"
 BACKUP_DIR = "system_backups"
@@ -42,9 +51,8 @@ def make_backup():
         today_str = datetime.now().strftime("%Y_%m_%d")
         backup_file = os.path.join(BACKUP_DIR, f"backup_{today_str}.db")
         if not os.path.exists(backup_file) and os.path.exists('jaya_lak.db'):
-            import shutil
             shutil.copyfile('jaya_lak.db', backup_file)
-    except Exception as e:
+    except Exception:
         pass
 
 def init_db():
@@ -156,17 +164,7 @@ def send_sms_notification(phone, message):
     encoded_msg = urllib.parse.quote(message)
     return f"sms:{phone}?&body={encoded_msg}"
 
-# ==========================================
-# 🎨 واجهة وتصميم التطبيق والخلفية الاحترافية
-# ==========================================
-st.set_page_config(
-    page_title="مؤسسة جايا لك للتوصيل الذكي",
-    page_icon="📦",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
-
-# نظام التحذير من انقطاع الإنترنت في الميدان لضمان عدم ضياع البيانات
+# نظام التحذير من انقطاع الإنترنت
 st.components.v1.html("""
 <script>
 window.addEventListener('offline', function(e) {
@@ -189,7 +187,7 @@ st.markdown("""
     button[title="Manage app"] {display: none !important;}
     
     .stApp {
-        background-image: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), 
+        background-image: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), 
                           url('https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
@@ -225,7 +223,28 @@ st.markdown("""
         margin-bottom: 15px;
     }
     
-    .big-driver-btn button, .big-send-btn button, .whatsapp-btn a, .sms-btn a, .role-btn button {
+    /* تكبير أزرار الواجهة الرئيسية وزر تأكيد الطلب للعميل */
+    .big-main-btn button, .big-send-btn button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        height: 75px !important;
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        border-radius: 16px !important;
+        color: white !important;
+        text-decoration: none !important;
+        margin-bottom: 15px !important;
+        transition: transform 0.2s ease;
+    }
+    
+    .big-main-btn button { background-color: #1e293b !important; box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.3) !important; }
+    .big-main-btn button:hover { transform: scale(1.02); }
+    
+    .big-send-btn button { background-color: #16a34a !important; box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.3) !important; }
+    
+    .big-driver-btn button, .whatsapp-btn a, .sms-btn a, .role-btn button {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -268,8 +287,7 @@ if st.session_state.current_role != "main_gate":
     st.markdown("</div><br>", unsafe_allow_html=True)
 
 # قاعدة البيانات الجغرافية
-from_locations_db = {
-    "المركز الرئيسي كتاب": {"light": 300, "heavy": 500},
+to_locations_db = {
     "مدينة كتاب": {"light": 300, "heavy": 500},
     "قرية الحزة": {"light": 300, "heavy": 500},
     "قرية رباط القلعة": {"light": 400, "heavy": 600},
@@ -289,7 +307,6 @@ from_locations_db = {
     "قرية العزازي": {"light": 1000, "heavy": 1500},
     "قرى الصفي": {"light": 1500, "heavy": 2500}
 }
-to_locations_db = {k: v for k, v in from_locations_db.items() if k != "المركز الرئيسي كتاب"}
 
 # -------------------------------------------------------------------------
 # 🚪 أ: البوابة الرئيسية المشتركة لاختيار الهوية (Main Gate)
@@ -305,13 +322,13 @@ if st.session_state.current_role == "main_gate":
         st.rerun()
     st.markdown("</div><br>", unsafe_allow_html=True)
     
-    st.markdown("<div class='role-btn'>", unsafe_allow_html=True)
+    st.markdown("<div class='big-main-btn'>", unsafe_allow_html=True)
     if st.button("🛵 أنا مندوب كابتن حركة (توصيل ميداني)"):
         st.session_state.current_role = "driver_portal"
         st.rerun()
-    st.markdown("</div><br>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
     
-    st.markdown("<div class='role-btn'>", unsafe_allow_html=True)
+    st.markdown("<div class='big-main-btn'>", unsafe_allow_html=True)
     if st.button("💼 لوحة تحكم الإدارة والمدير المركزي"):
         st.session_state.current_role = "manager_portal"
         st.rerun()
@@ -333,7 +350,7 @@ elif st.session_state.current_role == "client_portal":
 
         if st.session_state.client_order_success:
             st.markdown("<div class='card'>", unsafe_allow_html=True)
-            st.success(f"🎉 تم استلاف طلبك بنجاح! كود تتبع شحنتك الميداني هو: {st.session_state.last_order_id}")
+            st.success(f"🎉 تم استلام طلبك بنجاح! كود تتبع شحنتك الميداني هو: {st.session_state.last_order_id}")
             
             admin_tel = get_admin_whatsapp()
             client_msg = f"🚨 طلب جديد في جايا لك برقم ({st.session_state.last_order_id}). يرجى المراجعة والتعميد الفوري من لوحة المدير."
@@ -365,7 +382,8 @@ elif st.session_state.current_role == "client_portal":
             st.markdown("<h3 style='color:#16a34a;'>📍 مسار التوصيل</h3>", unsafe_allow_html=True)
             loc_col1, loc_col2 = st.columns(2)
             with loc_col1:
-                from_loc = st.selectbox("مكان استلام البضاعة (من أين؟) *", list(from_locations_db.keys()))
+                # تم الإلغاء وترك المركز الرئيسي فقط بناء على طلبك
+                from_loc = st.selectbox("مكان استلام البضاعة (من أين؟) *", ["المركز الرئيسي كتاب"])
             with loc_col2:
                 to_loc = st.selectbox("مكان تسليم البضاعة لبيتك (إلى أين؟) *", list(to_locations_db.keys()))
             st.markdown("</div>", unsafe_allow_html=True)
@@ -390,8 +408,9 @@ elif st.session_state.current_role == "client_portal":
                 jeeb_tx = st.text_input("أدخل رقم إشعار عملية التحويل المالي للتأكيد:")
             st.markdown("</div>", unsafe_allow_html=True)
 
-            light_price = max(from_locations_db[from_loc]["light"], to_locations_db[to_loc]["light"])
-            heavy_price = max(from_locations_db[from_loc]["heavy"], to_locations_db[to_loc]["heavy"])
+            # حساب التسعيرة بناء على المركز الرئيسي كتاب
+            light_price = to_locations_db[to_loc]["light"]
+            heavy_price = to_locations_db[to_loc]["heavy"]
             medium_price = int((light_price + heavy_price) / 2)
             final_cost = heavy_price if is_emergency else (light_price if "خفيفة" in weight_opt else (medium_price if "متوسطة" in weight_opt else heavy_price))
             display_type = "🚨 طوارئ مستعجلة" if is_emergency else f"عادي - {weight_opt}"
@@ -402,8 +421,6 @@ elif st.session_state.current_role == "client_portal":
             if st.button("🚀 إرسال وتأكيد الطلب نهائياً الآن"):
                 if not c_name.strip() or not c_phone.isdigit() or len(c_phone) < 9:
                     st.error("❌ خطأ: يرجى كتابة الاسم ورقم الهاتف الصحيح المكون من 9 أرقام لتواصل المندوب.")
-                elif from_loc == to_loc:
-                    st.error("❌ تنبيه مسار جغرافي خاطئ: نقطة الاستلام ونقطة التسليم متطابقتان.")
                 else:
                     order_id = str(random.randint(100000, 999999))
                     saved_voice_path = ""
@@ -470,7 +487,7 @@ elif st.session_state.current_role == "client_portal":
         st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
-# 🛵 ج: واجهة المندوب المستقلة (تم إصلاح استعلام الـ SQL الميداني بالكامل هنا)
+# 🛵 ج: واجهة المندوب المستقلة 
 # -------------------------------------------------------------------------
 elif st.session_state.current_role == "driver_portal":
     st.markdown("<h2 style='color:#1e293b;'>🛵 واجهة المندوب وكباتن الحركة الميدانية</h2>", unsafe_allow_html=True)
@@ -499,7 +516,6 @@ elif st.session_state.current_role == "driver_portal":
             if drv_auth and drv_auth['password'] == hash_password(driver_password_input):
                 drv_actual_name = drv_auth['name']
                 
-                # 🛠️ [تم الإصلاح] استعلام جلب التنبيه الميداني الأحدث دون أي تداخل نصوص
                 with get_db_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute("SELECT * FROM orders WHERE driver=? AND status='جاري التوصيل' ORDER BY order_time DESC LIMIT 1", (active_driver_id,))
@@ -513,7 +529,6 @@ elif st.session_state.current_role == "driver_portal":
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # 🛠️ [تم الإصلاح] استعلام جلب كشف المهام النشطة بالكامل بطريقة صحيحة ومستقرة
                 with get_db_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute("SELECT * FROM orders WHERE driver=? AND status='جاري التوصيل' ORDER BY order_time DESC", (active_driver_id,))
@@ -613,29 +628,29 @@ elif st.session_state.current_role == "manager_portal":
             
             st.markdown("### 📊 كشوفات وتقارير حركة الطلبات اليومية المتقدمة")
             manager_view_tab1, manager_view_tab2, manager_view_tab3 = st.tabs([
-                "✨ 1. الطلبات اليومية الجديدة (الأحدث أعلى القائمة)", 
+                "✨ 1. الطلبات اليومية الجديدة", 
                 "✅ 2. كشف الطلبات المنجزة بالتفصيل",
                 "🛠️ 3. إدارة المناديب والكباتن"
             ])
             
-            # --- التبويب الأول: الطلبات الجديدة بانتظار التوجيه ---
             with manager_view_tab1:
                 st.markdown("#### 🔥 الطلبات الجديدة الواردة بانتظار التوجيه والتعميد:")
                 cursor.execute("SELECT * FROM orders WHERE status='بانتظار الموافقة' ORDER BY rowid DESC")
                 new_orders = cursor.fetchall()
                 
                 if new_orders:
+                    # تم توسيع تفاصيل طلب الزبون لتظهر بالكامل هنا في لوحة المدير
                     new_orders_data = [{
                         "رقم الشحنة": row['id'],
                         "تاريخ ووقت وصول الطلب": row['order_time'],
-                        "اسم العميل": row['name'],
-                        "رقم العميل": row['phone'],
-                        "من منطقة": row['from_loc'],
-                        "إلى منطقة": row['to_loc'],
-                        "نوع وحجم الشحنة": row['type'],
-                        "طريقة السداد": row['payment_method'],
-                        "الملاحظات": row['notes'],
-                        "تكلفة التوصيل": f"{row['cost']:,} ريال"
+                        "اسم العميل الكامل": row['name'],
+                        "رقم هاتف العميل": row['phone'],
+                        "مكان الاستلام": row['from_loc'],
+                        "قرية التسليم": row['to_loc'],
+                        "حجم ونوع الشحنة": row['type'],
+                        "طريقة السداد المختارة": row['payment_method'],
+                        "الملاحظات المكتوبة": row['notes'] if row['notes'] else "لا يوجد ملاحظات",
+                        "تكلفة التوصيل الميداني": f"{row['cost']:,} ريال"
                     } for row in new_orders]
                     st.dataframe(new_orders_data, use_container_width=True)
                     
@@ -687,7 +702,6 @@ elif st.session_state.current_role == "manager_portal":
                         st.session_state.show_assignment_notif = False
                         st.rerun()
 
-            # --- التبويب الثاني: كشف الطلبات المنجزة بالتفصيل ---
             with manager_view_tab2:
                 st.markdown("#### ✅ الكشف والأرشيف الكامل لكافة الطلبات اليومية المنجزة والمصفاة ماليّاً:")
                 cursor.execute("SELECT * FROM orders WHERE status='تم التسليم ✅' ORDER BY rowid DESC")
@@ -714,7 +728,6 @@ elif st.session_state.current_role == "manager_portal":
                 else:
                     st.info("ℹ️ لم يتم تصفية وتسليم أي طلبات في الميدان حتى هذه اللحظة.")
 
-            # --- التبويب الثالث: إدارة وتعديل الكباتن والمناديب ---
             with manager_view_tab3:
                 st.markdown("### 🛵 لوحة التحكم في المناديب وكباتن الحركة")
                 m_drv_tab1, m_drv_tab2 = st.tabs(["➕ إضافة مندوب جديد", "📋 إدارة وتعديل الكباتن الحاليين"])
