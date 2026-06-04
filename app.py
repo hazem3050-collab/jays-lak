@@ -655,7 +655,7 @@ elif st.session_state.current_role == "manager_portal":
                     "تفاصيل الطلب": row['notes'],
                     "القيمة": row['cost']
                      }
-                    for row in new_orders]
+                 for row in new_orders]
                     st.dataframe(new_orders_data, use_container_width=True)
                     
                     st.markdown("#### 🎮 وحدة التوجيه والإسناد السريع للمناديب:")
