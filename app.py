@@ -13,7 +13,7 @@ from datetime import datetime
 st.config.set_option("server.maxUploadSize", 200)
 
 # ==========================================
-# 🎨 واجهة وتصميم التطبيق والخلفية الاحترافية
+# 🎨 واجهة وتصميم التطبيق والخلفية الاحترافية الجديدة
 # ==========================================
 st.set_page_config(
     page_title="مؤسسة جايا لك للتوصيل الذكي",
@@ -173,6 +173,7 @@ window.addEventListener('offline', function(e) {
 </script>
 """, height=0)
 
+# تضخيم الأزرار وإجبار الواجهة على التحديث الفوري لتخطي الـ Cache
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght=400;600;700&display=swap');
@@ -186,8 +187,9 @@ st.markdown("""
     iframe[title="Manage app"] {display: none !important;}
     button[title="Manage app"] {display: none !important;}
     
+    /* خلفية تحتوى على مواد غذائية، توابل، وخضروات متنوعة مجتمعة */
     .stApp {
-        background-image: linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.6)), 
+        background-image: linear-gradient(rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65)), 
                           url('https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
@@ -212,65 +214,72 @@ st.markdown("""
     
     .voice-box { border: 2px dashed #16a34a; padding: 20px; background-color: rgba(240, 253, 244, 0.95); border-radius: 16px; margin-bottom: 15px; text-align: center; }
     .jeeb-panel { background-color: rgba(240, 253, 244, 0.95); border-right: 6px solid #0d9488; padding: 15px; border-radius: 8px; font-weight: bold; }
-    .price-tag { background-color: rgba(239, 246, 255, 0.95); color: #1d4ed8 !important; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; font-size: 22px; border: 2px dashed #3b82f6; }
+    .price-tag { background-color: rgba(239, 246, 255, 0.95); color: #1d4ed8 !important; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; font-size: 24px; border: 2px dashed #3b82f6; }
     
-    .driver-notif-box {
-        background-color: #f0fdfa;
-        border: 2px solid #0284c7;
-        border-right: 8px solid #0284c7;
-        padding: 18px;
-        border-radius: 12px;
-        margin-bottom: 15px;
-    }
-    
-    /* تكبير أزرار الواجهة الرئيسية وزر تأكيد الطلب للعميل */
-    .big-main-btn button, .big-send-btn button {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+    /* 🚨 تضخيم وإجبار أزرار البوابة الرئيسية الثلاثة لتصبح عملاقة جداً */
+    div[data-testid="stMain"] div.stButton > button {
         width: 100% !important;
-        height: 75px !important;
-        font-size: 20px !important;
-        font-weight: 700 !important;
-        border-radius: 16px !important;
-        color: white !important;
-        text-decoration: none !important;
+        height: 85px !important;
+        font-size: 22px !important;
+        font-weight: 800 !important;
+        border-radius: 18px !important;
+        border: 2px solid #000000 !important;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2) !important;
         margin-bottom: 15px !important;
-        transition: transform 0.2s ease;
+        background-color: #1e293b !important;
+        color: #ffffff !important;
     }
     
-    .big-main-btn button { background-color: #1e293b !important; box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.3) !important; }
-    .big-main-btn button:hover { transform: scale(1.02); }
+    /* تمييز واستهداف زر العميل الأخضر وتكبيره بشكل هائل */
+    div.client-main-btn div.stButton > button {
+        background-color: #16a34a !important;
+        color: #ffffff !important;
+        height: 95px !important;
+        font-size: 24px !important;
+    }
     
-    .big-send-btn button { background-color: #16a34a !important; box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.3) !important; }
+    /* 🚨 تضخيم وإجبار زر تأكيد الطلب للزبون باللون الأخضر الفاقع والكبير */
+    div.big-confirm-btn div.stButton > button {
+        background-color: #16a34a !important;
+        color: #ffffff !important;
+        height: 95px !important;
+        font-size: 25px !important;
+        font-weight: 900 !important;
+        border: 3px solid #0f766e !important;
+        box-shadow: 0 10px 20px rgba(22, 163, 74, 0.4) !important;
+    }
     
-    .big-driver-btn button, .whatsapp-btn a, .sms-btn a, .role-btn button {
+    .whatsapp-btn a, .sms-btn a {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
         width: 100% !important;
         height: 60px !important;
-        background-color: #16a34a !important;
+        background-color: #25D366 !important;
         font-size: 18px !important;
         font-weight: bold !important;
         border-radius: 14px !important;
         color: white !important;
         text-decoration: none !important;
-        box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.3) !important;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.15) !important;
         margin-bottom: 8px !important;
     }
-    .whatsapp-btn a { background-color: #25D366 !important; }
     .sms-btn a { background-color: #0284c7 !important; }
-    .role-btn button { background-color: #1e293b !important; }
-    .back-btn button { background-color: #64748b !important; height: 45px !important; font-size: 16px !important; }
+    
+    .back-btn button { 
+        background-color: #64748b !important; 
+        color: white !important;
+        height: 50px !important; 
+        font-size: 18px !important; 
+    }
     
     h1, h2, h3, h4, h5, h6, label, p, span, li, td, th { color: #000000 !important; font-weight: 700 !important; }
-    input, select, textarea { color: #000000 !important; font-weight: bold !important; font-size: 17px !important; }
+    input, select, textarea { color: #000000 !important; font-weight: bold !important; font-size: 18px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>📦 مؤسسة جَايَا لَك للتوصيل</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 15px; font-weight: bold;'>الخدمة الأسرع لتوصيل المواد الغذائية والطلبات - كِتَاب والقرى المجاورة</p>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; margin-bottom: 0;'>📦 مؤسسة جَايَا لَك للتوصيل الذكي</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 16px; font-weight: bold;'>الخدمة الأسرع لتوصيل المواد الغذائية والطلبات - كِتَاب والقرى المجاورة</p>", unsafe_allow_html=True)
 st.write("---")
 
 # ==========================================
@@ -314,25 +323,21 @@ to_locations_db = {
 if st.session_state.current_role == "main_gate":
     st.markdown("<div class='card' style='text-align: center;'>", unsafe_allow_html=True)
     st.markdown("<h3 style='text-align: center; color:#16a34a;'>مرحباً بك في منظومة جايا لك الذكية 🤝</h3>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>يرجى اختيار هويتك للدخول إلى الواجهة المخصصة لك مباشرة وبأمان:</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 16px;'>يرجى اختيار هويتك للدخول إلى الواجهة المخصصة لك:</p>", unsafe_allow_html=True)
     
-    st.markdown("<div class='big-send-btn'>", unsafe_allow_html=True)
+    st.markdown("<div class='client-main-btn'>", unsafe_allow_html=True)
     if st.button("👤 أنا عميل (أريد إرسال طلب أو تتبع شحنة)"):
         st.session_state.current_role = "client_portal"
         st.rerun()
-    st.markdown("</div><br>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
     
-    st.markdown("<div class='big-main-btn'>", unsafe_allow_html=True)
     if st.button("🛵 أنا مندوب كابتن حركة (توصيل ميداني)"):
         st.session_state.current_role = "driver_portal"
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
     
-    st.markdown("<div class='big-main-btn'>", unsafe_allow_html=True)
     if st.button("💼 لوحة تحكم الإدارة والمدير المركزي"):
         st.session_state.current_role = "manager_portal"
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------------------------------------------------------------
@@ -373,17 +378,17 @@ elif st.session_state.current_role == "client_portal":
             st.markdown("<h3 style='color:#16a34a;'>👤 بياناتك الشخصية</h3>", unsafe_allow_html=True)
             cl_col1, cl_col2 = st.columns(2)
             with cl_col1:
-                c_name = st.text_input("اكتب اسمك الكامل هنا *", placeholder="مثال: أحمد حازم...", key="c_name")
+                c_name = st.text_input("اكتب اسمك الكامل هنا *", placeholder="أحمد...", key="c_name")
             with cl_col2:
                 c_phone = st.text_input("رقم هاتفك للتواصل (9 أرقام) *", max_chars=9, placeholder="77XXXXXXX", key="c_phone")
             st.markdown("</div>", unsafe_allow_html=True)
             
             st.markdown("<div class='card'>", unsafe_allow_html=True)
-            st.markdown("<h3 style='color:#16a34a;'>📍 مسار التوصيل</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color:#16a34a;'>📍 مسار التوصيل المعتمد</h3>", unsafe_allow_html=True)
             loc_col1, loc_col2 = st.columns(2)
             with loc_col1:
-                # تم الإلغاء وترك المركز الرئيسي فقط بناء على طلبك
-                from_loc = st.selectbox("مكان استلام البضاعة (من أين؟) *", ["المركز الرئيسي كتاب"])
+                # تم إلغاء القرى تماماً والإبقاء على المركز الرئيسي كتاب فقط بناء على طلبك
+                from_loc = st.selectbox("مكان استلاف وتجهيز البضاعة (من أين؟) *", ["المركز الرئيسي كتاب"])
             with loc_col2:
                 to_loc = st.selectbox("مكان تسليم البضاعة لبيتك (إلى أين؟) *", list(to_locations_db.keys()))
             st.markdown("</div>", unsafe_allow_html=True)
@@ -395,7 +400,7 @@ elif st.session_state.current_role == "client_portal":
             
             st.markdown("<div class='card'>", unsafe_allow_html=True)
             st.markdown("<h3>✏️ حجم وتفاصيل الشحنة</h3>", unsafe_allow_html=True)
-            user_notes = st.text_area("إذا تريد كتابة ملاحظة إضافية للمندوب اكتبها هنا:", placeholder="مثال: كرتون صلصة، كيس دقيق...")
+            user_notes = st.text_area("إذا تريد كتابة ملاحظة إضافية للمندوب اكتبها هنا:", placeholder="مثال: كرتون صلصة، بهارات، كيس دقيق...")
             weight_opt = st.selectbox("اختر ثقل وحجم شحنتك الميدانية لتحديد السعر الاقتصادية لها:", ["📦 خفيفة", "📦 متوسطة", "📦 ثقيلة"])
             image_file = st.file_uploader("صورة الفاتورة أو الطلب (اختياري):", type=["jpg", "png", "jpeg"])
             st.markdown("</div>", unsafe_allow_html=True)
@@ -408,7 +413,7 @@ elif st.session_state.current_role == "client_portal":
                 jeeb_tx = st.text_input("أدخل رقم إشعار عملية التحويل المالي للتأكيد:")
             st.markdown("</div>", unsafe_allow_html=True)
 
-            # حساب التسعيرة بناء على المركز الرئيسي كتاب
+            # حساب التسعيرة بناء على نقطة كتاب الثابتة
             light_price = to_locations_db[to_loc]["light"]
             heavy_price = to_locations_db[to_loc]["heavy"]
             medium_price = int((light_price + heavy_price) / 2)
@@ -417,7 +422,8 @@ elif st.session_state.current_role == "client_portal":
 
             st.markdown(f"<div class='price-tag'>💰 تكلفة التوصيل الإجمالية: {final_cost} ريال يمني</div><br>", unsafe_allow_html=True)
 
-            st.markdown("<div class='big-send-btn'>", unsafe_allow_html=True)
+            # 🚨 تضخيم وتكبير زر الإرسال للعميل ليصبح ضخماً جداً ومميزاً باللون الأخضر
+            st.markdown("<div class='big-confirm-btn'>", unsafe_allow_html=True)
             if st.button("🚀 إرسال وتأكيد الطلب نهائياً الآن"):
                 if not c_name.strip() or not c_phone.isdigit() or len(c_phone) < 9:
                     st.error("❌ خطأ: يرجى كتابة الاسم ورقم الهاتف الصحيح المكون من 9 أرقام لتواصل المندوب.")
@@ -523,7 +529,7 @@ elif st.session_state.current_role == "driver_portal":
                 
                 if latest_mission:
                     st.markdown(f"""
-                    <div class='driver-notif-box'>
+                    <div class='card' style='border-right: 8px solid #0284c7; background-color: #f0fdfa;'>
                         <h4 style='color:#0284c7 !important; margin:0;'>🔔 تنبيه تكليف جديد صادر من الإدارة الآن:</h4>
                         <p style='margin:5px 0 0 0;'>تم إسناد الشحنة رقم <b>({latest_mission['id']})</b> لك المتوجهة إلى <b>{latest_mission['to_loc']}</b>. يرجى مراجعة التفاصيل أدناه وتأكيد التحرك الميداني.</p>
                     </div>
@@ -553,7 +559,6 @@ elif st.session_state.current_role == "driver_portal":
                         if m['voice_path'] and os.path.exists(m['voice_path']):
                             st.audio(m['voice_path'])
                         
-                        st.markdown("<div class='big-driver-btn'>", unsafe_allow_html=True)
                         if st.button(f"✅ تأكيد تسليم شحنة {m['id']} وتصفية المالي", key=f"drv_btn_{m['id']}"):
                             current_delivery_str = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
                             with get_db_connection() as conn:
@@ -572,7 +577,7 @@ elif st.session_state.current_role == "driver_portal":
                                 st.markdown(f"<div class='whatsapp-btn'><a href='{cust_wa_url}' target='_blank'>💬 إشعار واتساب للزبون</a></div>", unsafe_allow_html=True)
                             with col_d_notif2:
                                 st.markdown(f"<div class='sms-btn'><a href='{cust_sms_url}'>✉️ رسالة نصية SMS للزبون</a></div>", unsafe_allow_html=True)
-                        st.markdown("</div><br>", unsafe_allow_html=True)
+                        st.markdown("<br>", unsafe_allow_html=True)
                 else:
                     st.info("🟢 لا توجد شحنات معلقة لك في الميدان حالياً. عمل ممتاز!")
             else:
@@ -581,7 +586,7 @@ elif st.session_state.current_role == "driver_portal":
         st.info("ℹ️ لا يوجد مناديب مسجلين في النظام حالياً.")
 
 # -------------------------------------------------------------------------
-# 💼 د: لوحة التحكم والمدير المركزي
+# 💼 د: لوحة التحكم والمدير المركزي (جدول التفاصيل الكاملة)
 # -------------------------------------------------------------------------
 elif st.session_state.current_role == "manager_portal":
     st.markdown("<h2 style='color:#1e293b;'>💼 لوحة إدارة العمليات المركزية</h2>", unsafe_allow_html=True)
@@ -634,23 +639,23 @@ elif st.session_state.current_role == "manager_portal":
             ])
             
             with manager_view_tab1:
-                st.markdown("#### 🔥 الطلبات الجديدة الواردة بانتظار التوجيه والتعميد:")
+                st.markdown("#### 🔥 الطلبات الجديدة الواردة بكافة التفاصيل الحيوية للزبائن:")
                 cursor.execute("SELECT * FROM orders WHERE status='بانتظار الموافقة' ORDER BY rowid DESC")
                 new_orders = cursor.fetchall()
                 
                 if new_orders:
-                    # تم توسيع تفاصيل طلب الزبون لتظهر بالكامل هنا في لوحة المدير
+                    # 🚀 تم تجميع وإبراز كافة تفاصيل الزبون الجديد مباشرة وبشكل مقروء جداً للمدير هنا
                     new_orders_data = [{
                         "رقم الشحنة": row['id'],
-                        "تاريخ ووقت وصول الطلب": row['order_time'],
-                        "اسم العميل الكامل": row['name'],
-                        "رقم هاتف العميل": row['phone'],
-                        "مكان الاستلام": row['from_loc'],
-                        "قرية التسليم": row['to_loc'],
-                        "حجم ونوع الشحنة": row['type'],
-                        "طريقة السداد المختارة": row['payment_method'],
-                        "الملاحظات المكتوبة": row['notes'] if row['notes'] else "لا يوجد ملاحظات",
-                        "تكلفة التوصيل الميداني": f"{row['cost']:,} ريال"
+                        "وقت وصول الطلب": row['order_time'],
+                        "اسم العميل": row['name'],
+                        "رقم الهاتف": row['phone'],
+                        "نقطة الاستلام": row['from_loc'],
+                        "قرية التوصيل": row['to_loc'],
+                        "نوع وحجم الشحنة": row['type'],
+                        "طريقة السداد": row['payment_method'],
+                        "ملاحظات وتفاصيل طلب الزبون": row['notes'] if row['notes'] else "لا يوجد ملاحظات مكتوبة",
+                        "قيمة التوصيل الميداني": f"{row['cost']:,} ريال"
                     } for row in new_orders]
                     st.dataframe(new_orders_data, use_container_width=True)
                     
@@ -713,15 +718,15 @@ elif st.session_state.current_role == "manager_portal":
                     
                     completed_orders_data = [{
                         "رقم الشحنة": row['id'],
-                        "وقت وتاريخ الطلب من الزبون": row['order_time'],
-                        "وقت وتاريخ التسليم الفعلي": row['delivery_time'],
-                        "الكابتن المنجز ميدانياً": drivers_names_map.get(row['driver'], row['driver']),
+                        "وقت الطلب من الزبون": row['order_time'],
+                        "وقت التسليم الفعلي": row['delivery_time'],
+                        "الكابتن المنجز": drivers_names_map.get(row['driver'], row['driver']),
                         "اسم العميل": row['name'],
-                        "هاتف العميل الموثق": row['phone'],
+                        "هاتف العميل": row['phone'],
                         "منطقة الاستلام": row['from_loc'],
-                        "منطقة التسليم النهائية": row['to_loc'],
+                        "منطقة التسليم": row['to_loc'],
                         "آلية الدفع والتصفية": row['payment_method'],
-                        "المبلغ المصفى للخزنة": f"{row['cost']:,} ريال"
+                        "المبلغ المصفى": f"{row['cost']:,} ريال"
                     } for row in completed_orders]
                     
                     st.dataframe(completed_orders_data, use_container_width=True)
