@@ -220,7 +220,7 @@ st.markdown("""
     div[data-testid="stMain"] div.stButton > button {
         width: 100% !important;
         height: 85px !important;
-        font-size: 22px !important;
+        font-size: 33px !important;
         font-weight: 800 !important;
         border-radius: 18px !important;
         border: 2px solid #000000 !important;
@@ -297,7 +297,7 @@ if st.session_state.current_role != "main_gate":
 
 # قاعدة البيانات الجغرافية
 to_locations_db = {
-    "مدينة كتاب": {"light": 300, "heavy": 500},
+    "مدينة كتاب": {"light": 200, "heavy": 400},
     "قرية الحزة": {"light": 300, "heavy": 500},
     "قرية رباط القلعة": {"light": 400, "heavy": 600},
     "قرية المنزل": {"light": 500, "heavy": 700},
@@ -326,16 +326,16 @@ if st.session_state.current_role == "main_gate":
     st.markdown("<p style='text-align: center; font-size: 16px;'>يرجى اختيار هويتك للدخول إلى الواجهة المخصصة لك:</p>", unsafe_allow_html=True)
     
     st.markdown("<div class='client-main-btn'>", unsafe_allow_html=True)
-    if st.button("👤 أنا عميل (أريد إرسال طلب أو تتبع شحنة)"):
+    if st.button("👤 أنا عميل (إرسال طلب جديد)"):
         st.session_state.current_role = "client_portal"
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
     
-    if st.button("🛵 أنا مندوب كابتن حركة (توصيل ميداني)"):
+    if st.button("🛵 قائمه المندوبين (توصيل ميداني)"):
         st.session_state.current_role = "driver_portal"
         st.rerun()
     
-    if st.button("💼 لوحة تحكم الإدارة والمدير المركزي"):
+    if st.button("💼 الإدارة والمدير المركزي"):
         st.session_state.current_role = "manager_portal"
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
