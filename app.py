@@ -789,3 +789,6 @@ elif st.session_state.current_role == "manager_portal":
                                     st.rerun()
                     else:
                         st.info("ℹ️ لا يوجد مناديب مسجلين لتعديلهم حالياً.")
+                        
+import menu_manager
+menu_manager.show_menu_manager()
