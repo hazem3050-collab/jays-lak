@@ -599,7 +599,7 @@ elif st.session_state.current_role == "manager_portal":
     if password_input and check_admin_password(password_input):
         st.success("🔓 تم فتح البوابة والتحقق من صلاحيات المدير بنجاح.")
 
- import menu_manager
+import menu_manager
 menu_manager.show_menu_manager()
    
   if 'show_assignment_notif' not in st.session_state:
