@@ -601,7 +601,6 @@ elif st.session_state.current_role == "manager_portal":
 
 import menu_manager
 menu_manager.show_menu_manager()
-   
             if 'show_assignment_notif' not in st.session_state:
             st.session_state.show_assignment_notif = False
             st.session_state.saved_wa_url = ""
