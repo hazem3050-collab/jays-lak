@@ -1,5 +1,4 @@
 import streamlit as st
-import services
 import sqlite3
 import random
 import os
@@ -220,10 +219,10 @@ st.markdown("""
     /* 🚨 تضخيم وإجبار أزرار البوابة الرئيسية الثلاثة لتصبح عملاقة جداً */
     div[data-testid="stMain"] div.stButton > button {
         width: 100% !important;
-        height: 120px !important;
-        font-size: 30px !important;
-        font-weight: 900 !important;
-        border-radius: 22px !important;
+        height: 85px !important;
+        font-size: 22px !important;
+        font-weight: 800 !important;
+        border-radius: 18px !important;
         border: 2px solid #000000 !important;
         box-shadow: 0 8px 16px rgba(0,0,0,0.2) !important;
         margin-bottom: 15px !important;
@@ -243,8 +242,8 @@ st.markdown("""
     div.big-confirm-btn div.stButton > button {
         background-color: #16a34a !important;
         color: #ffffff !important;
-        height: 130px !important;
-        font-size: 34px !important;
+        height: 95px !important;
+        font-size: 25px !important;
         font-weight: 900 !important;
         border: 3px solid #0f766e !important;
         box-shadow: 0 10px 20px rgba(22, 163, 74, 0.4) !important;
@@ -298,7 +297,7 @@ if st.session_state.current_role != "main_gate":
 
 # قاعدة البيانات الجغرافية
 to_locations_db = {
-    "مدينة كتاب": {"light": 200, "heavy": 400},
+    "مدينة كتاب": {"light": 300, "heavy": 500},
     "قرية الحزة": {"light": 300, "heavy": 500},
     "قرية رباط القلعة": {"light": 400, "heavy": 600},
     "قرية المنزل": {"light": 500, "heavy": 700},
@@ -597,14 +596,14 @@ elif st.session_state.current_role == "manager_portal":
     st.markdown("</div>", unsafe_allow_html=True)
     
     if password_input and check_admin_password(password_input):
-       st.success("🔓 تم فتح البوابة والتحقق من صلاحيات المدير بنجاح.")
-           
+        st.success("🔓 تم فتح البوابة والتحقق من صلاحيات المدير بنجاح.")
+        
         if 'show_assignment_notif' not in st.session_state:
-                  st.session_state.show_assignment_notif = False
-                  st.session_state.saved_wa_url = ""
-                  st.session_state.saved_sms_url = ""
-                  st.session_state.saved_drv_name = ""
-                  st.session_state.saved_order_id = ""
+            st.session_state.show_assignment_notif = False
+            st.session_state.saved_wa_url = ""
+            st.session_state.saved_sms_url = ""
+            st.session_state.saved_drv_name = ""
+            st.session_state.saved_order_id = ""
 
         with get_db_connection() as conn:
             cursor = conn.cursor()
@@ -787,5 +786,5 @@ elif st.session_state.current_role == "manager_portal":
                                     conn.commit()
                                     st.success("🗑️ تم حذف المندوب بنجاح من قاعدة البيانات.")
                                     st.rerun()
-                                else:
-                                    st.info("ℹ️ لا يوجد مناديب مسجلين لتعديلهم حالياً.")
+                    else:
+                        st.info("ℹ️ لا يوجد مناديب مسجلين لتعديلهم حالياً.")
