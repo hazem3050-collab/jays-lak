@@ -790,6 +790,6 @@ elif st.session_state.current_role == "manager_portal":
                                     conn.commit()
                                     st.success("🗑️ تم حذف المندوب بنجاح من قاعدة البيانات.")
                                     st.rerun()
-                           else:
-                               st.info("ℹ️ لا يوجد مناديب مسجلين لتعديلهم حالياً.")
+                                   else:
+                                        st.info("ℹ️ لا يوجد مناديب مسجلين لتعديلهم حالياً.")
                         
