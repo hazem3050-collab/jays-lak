@@ -597,8 +597,9 @@ elif st.session_state.current_role == "manager_portal":
     st.markdown("</div>", unsafe_allow_html=True)
     
     if password_input and check_admin_password(password_input):
-        st.success("🔓 تم فتح البوابة والتحقق من صلاحيات المدير بنجاح.")
-              if 'show_assignment_notif' not in st.session_state:
+       st.success("🔓 تم فتح البوابة والتحقق من صلاحيات المدير بنجاح.")
+           
+        if 'show_assignment_notif' not in st.session_state:
                   st.session_state.show_assignment_notif = False
                   st.session_state.saved_wa_url = ""
                   st.session_state.saved_sms_url = ""
