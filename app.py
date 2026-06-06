@@ -10,7 +10,7 @@ from datetime import datetime
 # ==========================================
 # 🛑 رفع حد رفع الملفات والصوت (يجب أن يكون في البداية)
 # ==========================================
-st.config.set_option("server.maxUploadSize", 200)
+st.config.set_option("server.maxUploadSize", 100)
 
 # ==========================================
 # 🎨 واجهة وتصميم التطبيق والخلفية الاحترافية الجديدة
@@ -120,7 +120,7 @@ def init_db():
             
         cursor.execute("SELECT value FROM settings WHERE key='admin_whatsapp'")
         if not cursor.fetchone():
-            cursor.execute("INSERT INTO settings VALUES ('admin_whatsapp', '770000000')")
+            cursor.execute("INSERT INTO settings VALUES ('admin_whatsapp', '777467346')")
             
         conn.commit()
     make_backup()
@@ -140,7 +140,7 @@ def get_admin_whatsapp():
         cursor = conn.cursor()
         cursor.execute("SELECT value FROM settings WHERE key='admin_whatsapp'")
         res = cursor.fetchone()
-        return res['value'] if res else "770000000"
+        return res['value'] if res else "777467346"
 
 def update_admin_whatsapp(new_phone):
     with get_db_connection() as conn:
@@ -219,10 +219,10 @@ st.markdown("""
     /* 🚨 تضخيم وإجبار أزرار البوابة الرئيسية الثلاثة لتصبح عملاقة جداً */
     div[data-testid="stMain"] div.stButton > button {
         width: 100% !important;
-        height: 85px !important;
-        font-size: 22px !important;
-        font-weight: 800 !important;
-        border-radius: 18px !important;
+        height: 180px !important;
+        font-size: 42px !important;
+        font-weight: 900 !important;
+        border-radius: 30px !important;
         border: 2px solid #000000 !important;
         box-shadow: 0 8px 16px rgba(0,0,0,0.2) !important;
         margin-bottom: 15px !important;
@@ -235,18 +235,18 @@ st.markdown("""
         background-color: #16a34a !important;
         color: #ffffff !important;
         height: 95px !important;
-        font-size: 24px !important;
+        font-size: 42px !important;
     }
     
     /* 🚨 تضخيم وإجبار زر تأكيد الطلب للزبون باللون الأخضر الفاقع والكبير */
     div.big-confirm-btn div.stButton > button {
         background-color: #16a34a !important;
         color: #ffffff !important;
-        height: 95px !important;
-        font-size: 25px !important;
+        height: 180px !important;
+        font-size: 42px !important;
         font-weight: 900 !important;
         border: 3px solid #0f766e !important;
-        box-shadow: 0 10px 20px rgba(22, 163, 74, 0.4) !important;
+        box-shadow: 0 20px 40px rgba(22, 163, 74, 0.4) !important;
     }
     
     .whatsapp-btn a, .sms-btn a {
@@ -297,7 +297,7 @@ if st.session_state.current_role != "main_gate":
 
 # قاعدة البيانات الجغرافية
 to_locations_db = {
-    "مدينة كتاب": {"light": 300, "heavy": 500},
+    "مدينة كتاب": {"light": 200, "heavy": 400},
     "قرية الحزة": {"light": 300, "heavy": 500},
     "قرية رباط القلعة": {"light": 400, "heavy": 600},
     "قرية المنزل": {"light": 500, "heavy": 700},
@@ -326,12 +326,12 @@ if st.session_state.current_role == "main_gate":
     st.markdown("<p style='text-align: center; font-size: 16px;'>يرجى اختيار هويتك للدخول إلى الواجهة المخصصة لك:</p>", unsafe_allow_html=True)
     
     st.markdown("<div class='client-main-btn'>", unsafe_allow_html=True)
-    if st.button("👤 أنا عميل (أريد إرسال طلب أو تتبع شحنة)"):
+    if st.button("👤 أنا مقدم الطلب (أريد إرسال طلب )"):
         st.session_state.current_role = "client_portal"
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
     
-    if st.button("🛵 أنا مندوب كابتن حركة (توصيل ميداني)"):
+    if st.button("🛵 أنا مندوب  (توصيل ميداني)"):
         st.session_state.current_role = "driver_portal"
         st.rerun()
     
@@ -400,7 +400,7 @@ elif st.session_state.current_role == "client_portal":
             
             st.markdown("<div class='card'>", unsafe_allow_html=True)
             st.markdown("<h3>✏️ حجم وتفاصيل الشحنة</h3>", unsafe_allow_html=True)
-            user_notes = st.text_area("إذا تريد كتابة ملاحظة إضافية للمندوب اكتبها هنا:", placeholder="مثال: كرتون صلصة، بهارات، كيس دقيق...")
+            user_notes = st.text_area("إذا تريد كتابة ملاحظة إضافية للمندوب اكتبها هنا:", placeholder="   مثال: ااي شيء بهارات، كيس دقيق...")
             weight_opt = st.selectbox("اختر ثقل وحجم شحنتك الميدانية لتحديد السعر الاقتصادية لها:", ["📦 خفيفة", "📦 متوسطة", "📦 ثقيلة"])
             image_file = st.file_uploader("صورة الفاتورة أو الطلب (اختياري):", type=["jpg", "png", "jpeg"])
             st.markdown("</div>", unsafe_allow_html=True)
