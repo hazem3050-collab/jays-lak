@@ -598,8 +598,11 @@ elif st.session_state.current_role == "manager_portal":
     
     if password_input and check_admin_password(password_input):
         st.success("🔓 تم فتح البوابة والتحقق من صلاحيات المدير بنجاح.")
-        
-        if 'show_assignment_notif' not in st.session_state:
+
+ import menu_manager
+menu_manager.show_menu_manager()
+   
+  if 'show_assignment_notif' not in st.session_state:
             st.session_state.show_assignment_notif = False
             st.session_state.saved_wa_url = ""
             st.session_state.saved_sms_url = ""
@@ -790,5 +793,3 @@ elif st.session_state.current_role == "manager_portal":
                     else:
                         st.info("ℹ️ لا يوجد مناديب مسجلين لتعديلهم حالياً.")
                         
-import menu_manager
-menu_manager.show_menu_manager()
